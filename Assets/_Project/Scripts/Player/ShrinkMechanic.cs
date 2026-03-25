@@ -60,6 +60,10 @@ namespace Shrink.Player
         /// </summary>
         public bool ProcessCell(Vector2Int cell)
         {
+            // Recoger estrella si la hay (independiente del tipo de celda)
+            float starBonus = _renderer.CollectStar(cell);
+            if (starBonus > 0f) _sphere.ApplyDelta(starBonus);
+
             CellType type = _renderer.Data.Grid[cell.x, cell.y];
 
             switch (type)
@@ -112,7 +116,7 @@ namespace Shrink.Player
                 float loss = Mathf.Min(EffectiveSizePerStep, _sphere.CurrentSize - SphereController.MinSize);
                 if (loss <= 0f) return;
 
-                _renderer.SpawnCrumb(cell, loss);
+                _renderer.SpawnCrumb(cell, loss, _sphere.BaseColor);
                 _sphere.ApplyDelta(-loss);
             }
         }

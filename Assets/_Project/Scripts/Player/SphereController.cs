@@ -32,6 +32,9 @@ namespace Shrink.Player
         public Vector2Int  CurrentCell { get; private set; }
         public bool        IsAlive     { get; private set; } = true;
 
+        /// <summary>Color base de la esfera (sin tinte de peligro). Usado por las migajas.</summary>
+        public Color BaseColor => colorAlive;
+
         private SpriteRenderer  _sr;
         private MazeRenderer    _mazeRenderer;
 

@@ -18,13 +18,14 @@ Scripts/
   Events/        GameEvents.cs — eventos globales estáticos
   Maze/          MazeGenerator, MazeData, CellType, MazeRenderer
                  Editor/MazeDebugVisualizerEditor.cs
-  Player/        SphereController, ShrinkMechanic, Crumb
+  Player/        SphereController, ShrinkMechanic, Crumb, Star
+  Enemies/       EnemyController, PatrolEnemy, TrailEnemy  ← pendiente Sistema 3.5
   Movement/      PlayerMovement
   Camera/        CameraFollow
+  UI/            HUDController, PauseMapController
   Level/         LevelManager, LevelData (ScriptableObject), LevelLoader  ← pendiente Sistema 5
   Monetization/  AdManager, IAPManager                                    ← pendiente Sistema 6
   Audio/         AudioManager                                              ← pendiente Sistema 7
-  UI/            Un controller por pantalla                               ← pendiente Sistema 8
 
 ScriptableObjects/
   Levels/        30 LevelData assets (Level_01 … Level_30)               ← pendiente Sistema 5
@@ -44,9 +45,10 @@ FX/Particles/
 | # | Sistema | Estado | Notas |
 |---|---------|--------|-------|
 | 1 | Generación procedural de maze | ✅ Completo | BSP + Labyrinth + Hybrid |
-| 2 | Esfera y mecánica de desgaste | ✅ Completo | Migajas, puertas, calibración auto |
+| 2 | Esfera y mecánica de desgaste | ✅ Completo | Migajas, puertas, estrellas, calibración auto |
 | 3 | Movimiento por swipe + cámara | ✅ Completo | Smart Slide + WASD para testing |
-| 4 | Mapa en pausa | ⬜ Pendiente | |
+| 3.5 | Enemigos | ⬜ Pendiente | Ver sección Enemigos |
+| 4 | Mapa en pausa + HUD | ✅ Completo | HUDController + PauseMapController |
 | 5 | Sistema de niveles y semillas | ⬜ Pendiente | |
 | 6 | Monetización | ⬜ Pendiente | |
 | 7 | Juice y sonido | ⬜ Pendiente | |
@@ -101,6 +103,93 @@ sizePerStep = 0.85 × difficultyFactor ÷ shortestPathLength
 - En Sistema 5, `difficultyFactor` vendrá del `LevelData` ScriptableObject de cada nivel.
 - Los callejones sin salida son gratis si el jugador retrocede completo (migajas recuperan el tamaño exacto).
 
+## Estrellas (recolectables)
+
+- Visual: diamante (cuadrado rotado 45°), color amarillo configurable
+- Recompensa: bonus de tamaño (`starSizeBonus`, default `+0.05`)
+- Placement: greedy farthest-point sampling sobre celdas con detour score ≥ 2
+  - Detour score = `distFromStart + distFromExit - shortestPath` (0 = en el camino directo)
+  - Primera estrella: máximo detour score. Siguientes: máxima distancia a las ya colocadas
+  - Resultado: distribución uniforme por todo el maze, preferentemente en callejones
+- Configuración por nivel: `starCount` y `starSizeBonus` → en Sistema 5 vendrán de `LevelData`
+
+### Garantías actuales
+- ✅ **Conectividad**: BFS con `size=1.0` — nunca detrás de NARROW ni en islas desconectadas
+- ⚠️ **Costeabilidad**: NO garantizada — es riesgo/recompensa intencional
+
+### Pendiente — garantía de estrellas costeables
+Implementar filtro opcional `minAffordableStars: int` para cuando `difficultyFactor ≥ 0.85`:
+```
+presupuesto_desvíos = 0.85 - (sizePerStep × shortestPathLength)
+estrella costeable si: distancia_extra × sizePerStep × 2 ≤ presupuesto_desvíos
+```
+
+## Enemigos — diseño (pendiente Sistema 3.5)
+
+Los enemigos se introducen a partir de niveles intermedios. Tocar un enemigo = muerte instantánea.
+
+### Tipos definidos
+
+| Tipo | Comportamiento | Efecto adicional |
+|------|---------------|-----------------|
+| **PatrolEnemy** | Recorre un segmento fijo de ida y vuelta | Ninguno |
+| **TrailEnemy** | Sigue el rastro de migajas del jugador y las devora | Elimina migajas (el jugador no puede recuperar ese tamaño) |
+| *(futuros)* | Perseguidor directo, emboscador, etc. | TBD |
+
+### Reglas de diseño
+- Los enemigos se mueven por celdas (mismo grid que el jugador)
+- No pueden pasar por NARROW si son "grandes" (definir tamaño por tipo)
+- El TrailEnemy sigue la lista de celdas con migaja ordenada por antigüedad (la más reciente primero)
+- Al devorar una migaja: `MazeRenderer.AbsorbCrumb(cell)` pero sin darle el tamaño al jugador
+- Los enemigos deben mostrarse en el mapa de pausa
+- Velocidad configurable por tipo (`[SerializeField] float moveInterval`)
+- Carpeta: `Scripts/Enemies/`
+- Namespace: `Shrink.Enemies`
+
+### Por definir al implementar
+- ¿En qué niveles aparece cada tipo?
+- ¿Cuántos enemigos por nivel?
+- ¿El TrailEnemy respawn de migajas o las elimina permanentemente?
+- ¿Hay power-up para ralentizarlos / asustarlos?
+
+## HUD + Mapa en pausa — Sistema 4
+
+### Arquitectura UI
+- **Un solo Canvas** en escena con dos paneles: `HUDView` (siempre visible) y `PauseView` (se activa/desactiva).
+- Los scripts `HUDController` y `PauseMapController` viven en el Canvas.
+- `GameBootstrap` referencia ambos via `[SerializeField]` — NO los crea en runtime.
+- Textos usan **TextMeshProUGUI** (`TMP_Text`), no `Text` legacy.
+
+### HUDController (`Scripts/UI/HUDController.cs`)
+- **Barra de tamaño** (bottom): `Image` filled horizontal, verde → amarillo → rojo según ratio `(size - MinSize) / rango`
+- **Label de pasos** (`_sizeLabel`): muestra `~N` pasos restantes = `(size - MinSize) / sizePerStep`
+- **Contador de estrellas** (`_starsLabel`): `"recogidas/total"`
+- **Botón pausa** (`_pauseButton`): llama `PauseMapController.Open()`
+- Recibe `ShrinkMechanic` en `Initialize` para calcular pasos restantes por nivel
+
+### PauseMapController (`Scripts/UI/PauseMapController.cs`)
+- Se activa con botón pausa (HUD) o tecla **Escape**
+- Crea en runtime: cámara ortográfica secundaria → `RenderTexture` → asignada al `RawImage` del Inspector
+- `FitMapImage()`: ajusta `sizeDelta` del `RawImage` en runtime según aspect ratio del maze y tamaño de pantalla (parámetros: `maxScreenFraction=0.82`, `bottomReserve=120`)
+- Dots en world space (visibles solo a la cámara del mapa): jugador (azul), EXIT (rojo)
+- `Time.timeScale = 0` al abrir, `= 1` al cerrar
+- Botón **CONTINUAR** (verde, centrado abajo)
+
+### Jerarquía de escena
+```
+Canvas (Canvas, CanvasScaler, GraphicRaycaster, HUDController, PauseMapController)
+  ├── HUDView
+  │   ├── TopBar
+  │   │   ├── StartIconText  (TMP — _starsLabel)
+  │   │   └── PauseButton    (Button — _pauseButton)
+  │   └── SizeBarContainer
+  │       ├── LifeBar        (Image filled — _sizeBarFill)
+  │       └── LifeText       (TMP — _sizeLabel)
+  └── PauseView              (GameObject — _mapPanel, desactivado por defecto)
+      ├── MapImage           (RawImage — _mapImage)
+      └── ResumeButton       (Button — _resumeButton)
+```
+
 ## Convenciones de código
 
 - Lenguaje: C# exclusivamente
@@ -110,7 +199,8 @@ sizePerStep = 0.85 × difficultyFactor ÷ shortestPathLength
 - Eventos globales estáticos en `Scripts/Events/GameEvents.cs`:
   - `OnLevelComplete`, `OnLevelFail`, `OnDoorOpened`
   - `OnSizeChanged`, `OnMigajaAbsorbed`, `OnNarrowPassageBlocked`
-- Namespaces: `Shrink.Core`, `Shrink.Maze`, `Shrink.Player`, etc.
+  - `OnStarCollected(int collected, int total)`
+- Namespaces: `Shrink.Core`, `Shrink.Maze`, `Shrink.Player`, `Shrink.Enemies`, etc.
 - Un archivo = una clase (sin excepciones)
 - Nombres de archivo en PascalCase, exactamente igual al nombre de la clase
 - Input: `Keyboard.current` y `Touchscreen.current` (New Input System)
@@ -133,12 +223,13 @@ public enum CellType
 - Migajas: una por celda, recuperan exactamente el tamaño perdido al ser reabsorbidas
 - Puertas: consumen tamaño permanentemente (sin migaja depositada), costo default `0.10`
 - El maze siempre tiene solución — validado con BFS, `ShortestPathLength` guardado en `MazeData`
+- Tocar un enemigo = muerte instantánea (fire `OnLevelFail`)
 
 ## Niveles
-- Mundo 1 (1–10): 20×12, sin tiempo, sin puertas. NARROW_06 desde nivel 5. MazeStyle: Dungeon
-- Mundo 2 (11–20): 25×15, sin tiempo, 1–2 puertas. NARROW_04 desde nivel 15. MazeStyle: Labyrinth
-- Mundo 3 (21–30): 35×20 → 40×24, con timer, 2–4 puertas (bloqueado tras IAP "Mundo 3"). MazeStyle: Labyrinth
-- Modo infinito: desbloqueable al completar nivel 30, semillas aleatorias, dificultad creciente. MazeStyle: Labyrinth
+- Mundo 1 (1–10): 20×12, sin tiempo, sin puertas, sin enemigos. NARROW_06 desde nivel 5. MazeStyle: Dungeon
+- Mundo 2 (11–20): 25×15, sin tiempo, 1–2 puertas, PatrolEnemy desde nivel 12. NARROW_04 desde nivel 15. MazeStyle: Labyrinth
+- Mundo 3 (21–30): 35×20 → 40×24, con timer, 2–4 puertas, TrailEnemy desde nivel 22 (bloqueado tras IAP). MazeStyle: Labyrinth
+- Modo infinito: semillas aleatorias, dificultad creciente, todos los tipos de enemigo. MazeStyle: Labyrinth
 
 ## Monetización
 | Producto | Precio | ID sugerido |
