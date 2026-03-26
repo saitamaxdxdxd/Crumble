@@ -1,5 +1,6 @@
-using Shrink.Maze;
-using TMPro;
+using Shrink.Level;
+using Shrink.Monetization;
+using Shrink.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -7,9 +8,9 @@ using UnityEngine.UI;
 namespace Shrink.UI
 {
     /// <summary>
-    /// Controla el mapa de pausa.
-    /// La cámara secundaria y RenderTexture se crean en runtime.
-    /// El panel UI se asigna desde el Inspector (Canvas en escena).
+    /// Controla el panel de pausa.
+    /// Ofrece botones para reanudar y para ver anuncios de recompensa
+    /// (añadir masa / añadir tiempo).
     /// </summary>
     public class PauseMapController : MonoBehaviour
     {
@@ -17,26 +18,23 @@ namespace Shrink.UI
         // Referencias UI — asignar en Inspector
         // ──────────────────────────────────────────────────────────────────────
 
-        [Header("Panel de pausa")]
+        [Header("Panel")]
         [SerializeField] private GameObject _mapPanel;
-        [SerializeField] private RawImage   _mapImage;
         [SerializeField] private Button     _resumeButton;
 
+        [Header("Botones de recompensa")]
+        [SerializeField] private Button _addSizeButton;
+        [SerializeField] private Button _addTimeButton;
+
         // ──────────────────────────────────────────────────────────────────────
-        // Config cámara (runtime)
+        // Configuración
         // ──────────────────────────────────────────────────────────────────────
 
-        [Header("Cámara del mapa")]
-        [SerializeField] private int   renderTextureSize = 512;
-        [Tooltip("Fracción de pantalla que puede ocupar el mapa (ancho y alto).")]
-        [SerializeField][Range(0.5f, 0.95f)] private float maxScreenFraction = 0.82f;
-        [Tooltip("Espacio reservado en la parte inferior para el botón CONTINUAR (px canvas).")]
-        [SerializeField] private float bottomReserve = 120f;
-
-        [Header("Indicadores en el mapa")]
-        [SerializeField] private Color playerDotColor = Color.blue;
-        [SerializeField] private Color exitDotColor   = new Color(0.9f, 0.2f, 0.2f);
-        [SerializeField] private float dotSize        = 0.45f;
+        [Header("Recompensas")]
+        [Tooltip("Tamaño extra que da el anuncio de masa.")]
+        [SerializeField] private float rewardedSizeBonus = 0.15f;
+        [Tooltip("Segundos extra que da el anuncio de tiempo.")]
+        [SerializeField] private float rewardedTimeBonus = 30f;
 
         // ──────────────────────────────────────────────────────────────────────
         // Estado
@@ -44,31 +42,46 @@ namespace Shrink.UI
 
         public bool IsPaused { get; private set; }
 
-        private MazeRenderer       _mazeRenderer;
-        private Transform          _playerTransform;
-        private UnityEngine.Camera _mapCamera;
-        private RenderTexture      _renderTexture;
-        private GameObject         _playerDot;
-        private GameObject         _exitDot;
+        private ShrinkMechanic _shrink;
+        private LevelTimer     _timer;
+        private bool           _pendingSizeReward;
+        private bool           _pendingTimeReward;
 
         // ──────────────────────────────────────────────────────────────────────
         // Inicialización
         // ──────────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Llamar desde GameBootstrap después de BuildLevel.
+        /// Llamar desde LevelLoader después de construir el nivel.
         /// </summary>
-        public void Initialize(MazeRenderer mazeRenderer, Transform playerTransform)
+        /// <param name="shrink">Mecánica de tamaño del jugador.</param>
+        /// <param name="timer">Timer del nivel — null si el nivel no tiene timer.</param>
+        public void Initialize(ShrinkMechanic shrink, LevelTimer timer)
         {
-            _mazeRenderer    = mazeRenderer;
-            _playerTransform = playerTransform;
-
-            BuildMapCamera();
+            _shrink = shrink;
+            _timer  = timer;
 
             if (_resumeButton != null)
                 _resumeButton.onClick.AddListener(Close);
 
+            if (_addSizeButton != null)
+                _addSizeButton.onClick.AddListener(OnAddSizePressed);
+
+            if (_addTimeButton != null)
+            {
+                _addTimeButton.onClick.AddListener(OnAddTimePressed);
+                _addTimeButton.gameObject.SetActive(timer != null);
+            }
+
+            AdManager.OnRewardEarned += HandleRewardEarned;
+
             SetPaused(false);
+        }
+
+        private void OnDestroy()
+        {
+            AdManager.OnRewardEarned -= HandleRewardEarned;
+            Time.timeScale = 1f;
         }
 
         // ──────────────────────────────────────────────────────────────────────
@@ -80,18 +93,15 @@ namespace Shrink.UI
             var kb = Keyboard.current;
             if (kb != null && kb.escapeKey.wasPressedThisFrame)
                 Toggle();
-
-            if (IsPaused && _playerDot != null)
-                _playerDot.transform.position = _playerTransform.position;
         }
 
         // ──────────────────────────────────────────────────────────────────────
         // API pública
         // ──────────────────────────────────────────────────────────────────────
 
-        public void Toggle()              => SetPaused(!IsPaused);
-        public void Open()                => SetPaused(true);
-        public void Close()               => SetPaused(false);
+        public void Toggle() => SetPaused(!IsPaused);
+        public void Open()   => SetPaused(true);
+        public void Close()  => SetPaused(false);
 
         public void SetPaused(bool paused)
         {
@@ -100,110 +110,68 @@ namespace Shrink.UI
 
             if (_mapPanel != null)
                 _mapPanel.SetActive(paused);
+
+            // Actualizar disponibilidad de botones de recompensa al abrir
+            if (paused) RefreshRewardButtons();
         }
 
         // ──────────────────────────────────────────────────────────────────────
-        // Construcción de la cámara del mapa (runtime)
+        // Botones de recompensa
         // ──────────────────────────────────────────────────────────────────────
 
-        private void BuildMapCamera()
+        private void OnAddSizePressed()
         {
-            var data     = _mazeRenderer.Data;
-            float cell   = _mazeRenderer.CellSize;
-            float width  = data.Width  * cell;
-            float height = data.Height * cell;
-            Vector3 mazeOrigin = _mazeRenderer.transform.position;
-
-            var camGo = new GameObject("MapCamera");
-            camGo.transform.SetParent(transform, false);
-            camGo.transform.position = mazeOrigin + new Vector3(width * 0.5f, height * 0.5f, -20f);
-
-            _mapCamera = camGo.AddComponent<UnityEngine.Camera>();
-            _mapCamera.orthographic     = true;
-            _mapCamera.orthographicSize = height * 0.5f + cell;
-            _mapCamera.clearFlags       = CameraClearFlags.SolidColor;
-            _mapCamera.backgroundColor  = new Color(0.06f, 0.06f, 0.08f, 1f);
-            _mapCamera.cullingMask      = LayerMask.GetMask("Default");
-            _mapCamera.aspect           = width / height;
-
-            _renderTexture = new RenderTexture(renderTextureSize, renderTextureSize, 16);
-            _mapCamera.targetTexture = _renderTexture;
-
-            if (_mapImage != null)
+            if (AdManager.Instance == null || !AdManager.Instance.IsRewardedAvailable) return;
+            _pendingSizeReward = true;
+            _pendingTimeReward = false;
+            Close();
+            AdManager.Instance.ShowRewarded(() =>
             {
-                _mapImage.texture = _renderTexture;
-                FitMapImage(width / height);
-            }
-
-            _playerDot = CreateWorldDot("PlayerDot", playerDotColor, cell);
-            _exitDot   = CreateWorldDot("ExitDot",   exitDotColor,   cell);
-
-            _playerDot.transform.position = _playerTransform.position;
-            _exitDot.transform.position   = _mazeRenderer.CellToWorld(data.ExitCell);
+                // Anuncio no disponible — reabrir pausa
+                _pendingSizeReward = false;
+                Open();
+            });
         }
 
-        /// <summary>
-        /// Ajusta el RectTransform del MapImage para que quepa en pantalla
-        /// manteniendo el aspect ratio del maze.
-        /// </summary>
-        private void FitMapImage(float mazeAspect)
+        private void OnAddTimePressed()
         {
-            var canvas = _mapImage.canvas;
-            if (canvas == null) return;
-
-            // Tamaño disponible en unidades canvas
-            var canvasRect = canvas.GetComponent<RectTransform>();
-            float availW = canvasRect.rect.width  * maxScreenFraction;
-            float availH = (canvasRect.rect.height - bottomReserve) * maxScreenFraction;
-
-            // Ajustar manteniendo aspect ratio: fit inside availW × availH
-            float fitByWidth  = availW;
-            float fitByHeight = availH * mazeAspect;
-
-            float imgW, imgH;
-            if (fitByHeight <= availW)
+            if (AdManager.Instance == null || !AdManager.Instance.IsRewardedAvailable) return;
+            _pendingTimeReward = true;
+            _pendingSizeReward = false;
+            Close();
+            AdManager.Instance.ShowRewarded(() =>
             {
-                imgH = availH;
-                imgW = imgH * mazeAspect;
-            }
-            else
-            {
-                imgW = availW;
-                imgH = imgW / mazeAspect;
-            }
-
-            var rt          = _mapImage.GetComponent<RectTransform>();
-            rt.sizeDelta    = new Vector2(imgW, imgH);
-            // Centrar verticalmente dejando espacio para el botón abajo
-            rt.anchoredPosition = new Vector2(0f, bottomReserve * 0.5f);
+                _pendingTimeReward = false;
+                Open();
+            });
         }
 
-        private GameObject CreateWorldDot(string name, Color color, float cellSize)
+        private void HandleRewardEarned()
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(_mazeRenderer.transform, false);
+            if (_pendingSizeReward && _shrink != null)
+            {
+                _shrink.AddSize(rewardedSizeBonus);
+                Debug.Log($"[PauseController] +{rewardedSizeBonus} masa por recompensa.");
+            }
+            else if (_pendingTimeReward && _timer != null)
+            {
+                _timer.AddTime(rewardedTimeBonus);
+                Debug.Log($"[PauseController] +{rewardedTimeBonus}s por recompensa.");
+            }
 
-            var sr         = go.AddComponent<SpriteRenderer>();
-            sr.sprite       = Core.ShapeFactory.GetCircle();
-            sr.color        = color;
-            sr.sortingOrder = 10;
-
-            go.transform.localScale = Vector3.one * cellSize * dotSize;
-            return go;
+            _pendingSizeReward = false;
+            _pendingTimeReward = false;
         }
 
-        // ──────────────────────────────────────────────────────────────────────
-        // Limpieza
-        // ──────────────────────────────────────────────────────────────────────
-
-        private void OnDestroy()
+        private void RefreshRewardButtons()
         {
-            if (_renderTexture != null)
-            {
-                _renderTexture.Release();
-                Destroy(_renderTexture);
-            }
-            Time.timeScale = 1f;
+            bool available = AdManager.Instance != null && AdManager.Instance.IsRewardedAvailable;
+
+            if (_addSizeButton != null)
+                _addSizeButton.interactable = available;
+
+            if (_addTimeButton != null && _timer != null)
+                _addTimeButton.interactable = available;
         }
     }
 }

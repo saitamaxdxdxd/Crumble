@@ -18,9 +18,18 @@ namespace Shrink.Level
         // Referencias de escena (asignar en Inspector)
         // ──────────────────────────────────────────────────────────────────────
 
+        [Header("Prefabs")]
+        [SerializeField] private GameObject _playerPrefab;
+
         [Header("UI")]
         [SerializeField] private HUDController      _hud;
         [SerializeField] private PauseMapController  _pauseMap;
+
+        [Header("Movimiento")]
+        [SerializeField] private PlayerMovement.MovementMode movementMode          = PlayerMovement.MovementMode.SlideToWall;
+        [SerializeField] private float                       moveTime              = 0.10f;
+        [SerializeField] private float                       continuousMoveTime    = 0.18f;
+        [SerializeField] private float                       swipeMinDist          = 40f;
 
         // ──────────────────────────────────────────────────────────────────────
         // Referencias runtime
@@ -131,16 +140,20 @@ namespace Shrink.Level
             _renderer.SpawnStars(levelData.StarCount, levelData.StarSizeBonus, seed);
 
             // ── Player ────────────────────────────────────────────────────────
-            var playerGo = new GameObject("Player");
-            playerGo.transform.position = _renderer.CellToWorld(mazeData.StartCell);
+            if (_playerPrefab == null)
+            {
+                Debug.LogError("[LevelLoader] Falta asignar Player Prefab en el Inspector.");
+                return;
+            }
+            var playerGo = Instantiate(_playerPrefab, _renderer.CellToWorld(mazeData.StartCell), Quaternion.identity);
 
-            _sphere   = playerGo.AddComponent<SphereController>();
-            _shrink   = playerGo.AddComponent<ShrinkMechanic>();
-            _movement = playerGo.AddComponent<PlayerMovement>();
+            _sphere   = playerGo.GetComponent<SphereController>();
+            _shrink   = playerGo.GetComponent<ShrinkMechanic>();
+            _movement = playerGo.GetComponent<PlayerMovement>();
 
             _sphere.Initialize(_renderer, mazeData.StartCell);
             _shrink.Initialize(_renderer, levelData.DifficultyFactor);
-            _movement.Initialize(_renderer);
+            _movement.Initialize(_renderer, movementMode, moveTime, continuousMoveTime, swipeMinDist);
 
             // ── Cámara ────────────────────────────────────────────────────────
             float ortho = Mathf.Max(levelData.MazeWidth, levelData.MazeHeight)
@@ -156,7 +169,7 @@ namespace Shrink.Level
             }
 
             // ── UI ────────────────────────────────────────────────────────────
-            if (_pauseMap != null) _pauseMap.Initialize(_renderer, playerGo.transform);
+            if (_pauseMap != null) _pauseMap.Initialize(_shrink, _timer);
             if (_hud      != null) _hud.Initialize(_pauseMap, _renderer.TotalStars, _shrink, levelData.HasTimer);
 
             Debug.Log($"[LevelLoader] Nivel {levelData.LevelNumber} cargado | seed={seed} | " +

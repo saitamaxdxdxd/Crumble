@@ -55,6 +55,9 @@ namespace Shrink.Player
         // API pública — llamada por PlayerMovement al llegar a una celda
         // ──────────────────────────────────────────────────────────────────────
 
+        /// <summary>Añade tamaño al jugador (recompensa por anuncio).</summary>
+        public void AddSize(float amount) => _sphere.ApplyDelta(amount);
+
         /// <summary>
         /// Procesa los efectos de tamaño al entrar en <paramref name="cell"/>.
         /// Devuelve false si la celda está bloqueada para el tamaño actual.

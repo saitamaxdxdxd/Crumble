@@ -73,6 +73,13 @@ namespace Shrink.Level
         // Control
         // ──────────────────────────────────────────────────────────────────────
 
+        /// <summary>Añade segundos al timer (recompensa por anuncio).</summary>
+        public void AddTime(float seconds)
+        {
+            Remaining += seconds;
+            GameEvents.RaiseTimerTick(Remaining);
+        }
+
         private void Stop() => IsRunning = false;
     }
 }

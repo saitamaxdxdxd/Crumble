@@ -18,7 +18,7 @@ Todo el código del juego vive aquí. No tocar Assets/Scenes, Assets/Settings ni
 
 ```
 Scripts/
-  Core/          ShapeFactory, GameBootstrap (test), GameManager (pendiente Sistema 5)
+  Core/          ShapeFactory, GameManager
   Events/        GameEvents.cs — eventos globales estáticos
   Maze/          MazeGenerator, MazeData, CellType, MazeRenderer
                  Editor/MazeDebugVisualizerEditor.cs
@@ -27,15 +27,16 @@ Scripts/
   Movement/      PlayerMovement
   Camera/        CameraFollow
   UI/            HUDController, PauseMapController
-  Level/         LevelManager, LevelData (ScriptableObject), LevelLoader  ← pendiente Sistema 5
-  Monetization/  AdManager, IAPManager                                    ← pendiente Sistema 6
+  Level/         LevelManager, LevelData (ScriptableObject), LevelLoader, LevelTimer
+  Monetization/  AdManager, IAPManager
   Audio/         AudioManager                                              ← pendiente Sistema 7
 
 ScriptableObjects/
-  Levels/        30 LevelData assets (Level_01 … Level_30)               ← pendiente Sistema 5
+  Levels/        30 LevelData assets (Level_01 … Level_30)
   Colors/        Paletas de color (IAP)
 
-Prefabs/         pendiente
+Prefabs/
+  Player.prefab  (SphereController + ShrinkMechanic + PlayerMovement)
 Scenes/
 Materials/
 Sprites/
@@ -46,7 +47,17 @@ FX/Particles/
 
 ## Sistemas — estado actual
 
-1. #SistemaEstadoNotas1Generación procedural de maze✅ CompletoBSP + Labyrinth + Hybrid2Esfera y mecánica de desgaste✅ CompletoMigajas, puertas, estrellas, calibración auto3Movimiento por swipe + cámara✅ CompletoSmart Slide + WASD para testing4Mapa en pausa + HUD✅ CompletoHUDController + PauseMapController5Sistema de niveles y semillas⬜ Pendiente 6Monetización⬜ Pendiente 7Juice y sonido⬜ Pendiente 8UI completa⬜ Pendiente3.5Enemigos⬜ Pendiente (implementar al final)Ver sección Enemigos
+| # | Sistema | Estado | Notas |
+|---|---------|--------|-------|
+| 1 | Generación procedural de maze | ✅ Completo | BSP + Labyrinth + Hybrid |
+| 2 | Esfera y mecánica de desgaste | ✅ Completo | Migajas, puertas, estrellas, calibración auto |
+| 3 | Movimiento por swipe + cámara | ✅ Completo | SlideToWall + ContinuousSlide + StepByStep |
+| 4 | Pausa + HUD | ✅ Completo | HUDController + PauseMapController (sin mapa) |
+| 5 | Sistema de niveles y semillas | ✅ Completo | LevelData, LevelManager, LevelLoader, LevelTimer, Trampas |
+| 6 | Monetización | ✅ Completo | IAPManager (Unity IAP v5) + AdManager (AdMob) |
+| 7 | Juice y sonido | ⬜ Pendiente | AudioManager |
+| 8 | UI completa | ⬜ Pendiente | Boot + Menu + LevelSelect (panel) + GameOver + LevelComplete |
+| 3.5 | Enemigos | ⬜ Pendiente (al final) | Ver sección Enemigos |
 
 ## Generación de maze — MazeStyle
 
@@ -62,16 +73,23 @@ public enum MazeStyle { Dungeon, Labyrinth, Hybrid }
 
 ## Movimiento — PlayerMovement
 
-Modo activo: **SlideToWall con Smart Slide**
+Tres modos seleccionables desde `LevelLoader` en el Inspector:
 
-Reglas de parada al deslizar:
+| Modo | Comportamiento | Uso |
+|------|---------------|-----|
+| `SlideToWall` | Smart Slide: para en pared, NARROW e intersecciones | Producción (default) |
+| `ContinuousSlide` | Para solo en pared/NARROW; nuevo swipe redirige en el próximo paso | Alternativa a probar |
+| `StepByStep` | Una celda por input | Testing con teclado |
 
-1. Siguiente celda es WALL o fuera de límites
-2. Pasaje estrecho bloqueado por tamaño actual
-3. Celda actual tiene salidas perpendiculares (intersección)
-4. Celda actual es EXIT
+**Configuración en LevelLoader** (sección Movimiento en Inspector):
+- `Move Time` — segundos por celda para SlideToWall/StepByStep (default `0.10`)
+- `Continuous Move Time` — segundos por celda para ContinuousSlide (default `0.18`)
+- `Swipe Min Dist` — píxeles mínimos para reconocer swipe (default `40`)
 
-Campo `Mode` en Inspector permite cambiar a `StepByStep` para testing con teclado.
+**Player Prefab**: `Assets/_Project/Prefabs/Player.prefab`
+- Contiene: `SphereController`, `ShrinkMechanic`, `PlayerMovement`
+- `LevelLoader` lo instancia en runtime con `Instantiate(_playerPrefab)`
+- Asignar en Inspector de LevelLoader (sección Prefabs)
 
 ## Calibración de dificultad — ShrinkMechanic
 
@@ -168,11 +186,13 @@ Los enemigos se introducen a partir de niveles intermedios. Tocar un enemigo = m
 ### PauseMapController (`Scripts/UI/PauseMapController.cs`)
 
 - Se activa con botón pausa (HUD) o tecla **Escape**
-- Crea en runtime: cámara ortográfica secundaria → `RenderTexture` → asignada al `RawImage` del Inspector
-- `FitMapImage()`: ajusta `sizeDelta` del `RawImage` en runtime según aspect ratio del maze y tamaño de pantalla (parámetros: `maxScreenFraction=0.82`, `bottomReserve=120`)
-- Dots en world space (visibles solo a la cámara del mapa): jugador (azul), EXIT (rojo)
+- **Sin mapa** — el maze es el reto, el jugador usa sus propias migajas como guía
 - `Time.timeScale = 0` al abrir, `= 1` al cerrar
-- Botón **CONTINUAR** (verde, centrado abajo)
+- Botón **CONTINUAR** — reanuda el juego
+- Botón **AÑADIR MASA** — muestra rewarded ad → da `rewardedSizeBonus` (default `0.15`) de tamaño
+- Botón **AÑADIR TIEMPO** — solo visible si el nivel tiene timer → da `rewardedTimeBonus` (default `30s`)
+- Los botones de recompensa se desactivan (`interactable = false`) si ya se usó el rewarded en este nivel
+- `Initialize(ShrinkMechanic shrink, LevelTimer timer)` — llamar desde LevelLoader
 
 ### Jerarquía de escena
 
@@ -180,13 +200,14 @@ Los enemigos se introducen a partir de niveles intermedios. Tocar un enemigo = m
 Canvas (Canvas, CanvasScaler, GraphicRaycaster, HUDController, PauseMapController)
   ├── HUDView
   │   ├── TopBar
-  │   │   ├── StartIconText  (TMP — _starsLabel)
+  │   │   ├── StarsLabel     (TMP — _starsLabel)
   │   │   └── PauseButton    (Button — _pauseButton)
   │   └── SizeBarContainer
   │       ├── LifeBar        (Image filled — _sizeBarFill)
   │       └── LifeText       (TMP — _sizeLabel)
   └── PauseView              (GameObject — _mapPanel, desactivado por defecto)
-      ├── MapImage           (RawImage — _mapImage)
+      ├── AddSizeButton      (Button — _addSizeButton)
+      ├── AddTimeButton      (Button — _addTimeButton, oculto si sin timer)
       └── ResumeButton       (Button — _resumeButton)
 ```
 
@@ -276,8 +297,11 @@ Colocar `TRAP_DRAIN` preferentemente en celdas adyacentes a estrellas para que r
 | Mundo 3           | $1.99  | `world_3`      |
 | Modo Infinito Pro | $2.99  | `infinite_pro` |
 
-- Interstitial AdMob: cada 3 niveles completados, solo en pantalla de nivel completado
-- Rewarded AdMob: game over → continuar con 50% tamaño / +30 segundos. Máximo 1 por nivel.
+- Interstitial AdMob: cada 3 niveles completados (se dispara en `HandleLevelComplete`)
+- Rewarded AdMob: disponible desde el panel de pausa → Añadir masa (+0.15) o Añadir tiempo (+30s). Máximo 1 por nivel.
+- Si el jugador tiene `no_ads`: `AdsDisabled()` devuelve true y no se muestra ningún anuncio
+- `AdManager.IsRewardedAvailable` — consultar antes de mostrar botones de recompensa en UI
+- IDs configurados en `AdManager.cs` con `#if UNITY_IOS / #else` para iOS/Android
 
 ## Rendimiento
 

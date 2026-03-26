@@ -146,6 +146,11 @@ namespace Shrink.Core
 
             if (kb.rKey.wasPressedThisFrame) RestartLevel();
             if (kb.nKey.wasPressedThisFrame) GoToNextLevel();
+
+#if UNITY_EDITOR
+            if (kb.iKey.wasPressedThisFrame)
+                Monetization.IAPManager.Instance?.BuyProduct(Monetization.IAPManager.ProductNoAds);
+#endif
         }
     }
 }

@@ -7,10 +7,11 @@ using UnityEngine.InputSystem;
 namespace Shrink.Movement
 {
     /// <summary>
-    /// Mueve la esfera por el maze con dos modos:
-    /// StepByStep  → una celda por input (bueno para testing con teclado).
-    /// SlideToWall → desliza en la dirección del swipe hasta topar pared o pasaje bloqueado.
-    ///               Este es el modo de producción para móvil.
+    /// Mueve la esfera por el maze con tres modos:
+    /// StepByStep      → una celda por input (testing con teclado).
+    /// SlideToWall     → Smart Slide: para en paredes, NARROW e intersecciones.
+    /// ContinuousSlide → para solo en paredes/NARROW; el jugador puede redirigir
+    ///                   en cualquier momento swipeando una nueva dirección.
     /// </summary>
     [RequireComponent(typeof(Player.SphereController))]
     [RequireComponent(typeof(Player.ShrinkMechanic))]
@@ -20,11 +21,12 @@ namespace Shrink.Movement
         // Config
         // ──────────────────────────────────────────────────────────────────────
 
-        public enum MovementMode { StepByStep, SlideToWall }
+        public enum MovementMode { StepByStep, SlideToWall, ContinuousSlide }
 
-        [SerializeField] private MovementMode mode         = MovementMode.SlideToWall;
-        [SerializeField] private float        moveTime     = 0.10f; // segundos por celda
-        [SerializeField] private float        swipeMinDist = 40f;   // píxeles mínimos para swipe
+        private MovementMode mode              = MovementMode.SlideToWall;
+        private float        moveTime         = 0.10f;
+        private float        continuousMoveTime = 0.18f;
+        private float        swipeMinDist     = 40f;
 
         // ──────────────────────────────────────────────────────────────────────
         // Referencias
@@ -38,20 +40,25 @@ namespace Shrink.Movement
         // Estado
         // ──────────────────────────────────────────────────────────────────────
 
-        private bool    _isMoving;
-        private bool    _blocked;     // se bloqueó en mid-slide (para feedback futuro)
-        private Vector2 _swipeStart;
-        private bool    _swipeActive;
+        private bool       _isMoving;
+        private Vector2    _swipeStart;
+        private bool       _swipeActive;
+        private Vector2Int _continuousDir;
 
         // ──────────────────────────────────────────────────────────────────────
         // Inicialización
         // ──────────────────────────────────────────────────────────────────────
 
-        public void Initialize(MazeRenderer mazeRenderer)
+        public void Initialize(MazeRenderer mazeRenderer, MovementMode movementMode,
+                               float cellMoveTime, float cellContinuousMoveTime, float minSwipeDist)
         {
-            _sphere   = GetComponent<Player.SphereController>();
-            _shrink   = GetComponent<Player.ShrinkMechanic>();
-            _renderer = mazeRenderer;
+            _sphere            = GetComponent<Player.SphereController>();
+            _shrink            = GetComponent<Player.ShrinkMechanic>();
+            _renderer          = mazeRenderer;
+            mode               = movementMode;
+            moveTime           = cellMoveTime;
+            continuousMoveTime = cellContinuousMoveTime;
+            swipeMinDist       = minSwipeDist;
 
             GameEvents.OnLevelFail     += OnGameOver;
             GameEvents.OnLevelComplete += OnGameOver;
@@ -71,10 +78,24 @@ namespace Shrink.Movement
 
         private void Update()
         {
-            if (_isMoving || !_sphere.IsAlive) return;
+            if (!_sphere.IsAlive) return;
 
             Vector2Int dir = ReadKeyboardInput();
             if (dir == Vector2Int.zero) dir = ReadSwipeInput();
+
+            if (mode == MovementMode.ContinuousSlide)
+            {
+                if (dir != Vector2Int.zero)
+                {
+                    if (!_isMoving)
+                        StartCoroutine(ContinuousSlideCoroutine(dir));
+                    else
+                        _continuousDir = dir; // redirigir en el siguiente paso
+                }
+                return;
+            }
+
+            if (_isMoving) return;
             if (dir == Vector2Int.zero) return;
 
             if (mode == MovementMode.SlideToWall)
@@ -142,7 +163,6 @@ namespace Shrink.Movement
         private IEnumerator SlideCoroutine(Vector2Int dir)
         {
             _isMoving = true;
-            _blocked  = false;
 
             while (true)
             {
@@ -174,6 +194,46 @@ namespace Shrink.Movement
             }
 
             _isMoving = false;
+        }
+
+        // ──────────────────────────────────────────────────────────────────────
+        // Modo ContinuousSlide
+        // ──────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Continuous Slide: avanza indefinidamente en la dirección activa.
+        /// Para solo en pared o NARROW bloqueado.
+        /// El jugador puede cambiar de dirección en cualquier momento — el cambio
+        /// se aplica al llegar al borde de la celda actual.
+        /// </summary>
+        private IEnumerator ContinuousSlideCoroutine(Vector2Int initialDir)
+        {
+            _isMoving      = true;
+            _continuousDir = initialDir;
+
+            while (true)
+            {
+                Vector2Int next = _sphere.CurrentCell + _continuousDir;
+
+                if (!CanEnter(next, out bool narrowBlocked))
+                {
+                    if (narrowBlocked) GameEvents.RaiseNarrowPassageBlocked(next);
+                    break;
+                }
+
+                yield return StartCoroutine(LerpToCell(next));
+                _sphere.SetCell(next);
+                _shrink.ProcessCell(next);
+
+                if (_renderer.Data.Grid[next.x, next.y] == CellType.EXIT)
+                {
+                    GameEvents.RaiseLevelComplete();
+                    break;
+                }
+            }
+
+            _isMoving      = false;
+            _continuousDir = Vector2Int.zero;
         }
 
         /// <summary>
@@ -245,13 +305,14 @@ namespace Shrink.Movement
         /// <summary>Lerp suavizado desde la posición actual hasta la celda destino.</summary>
         private IEnumerator LerpToCell(Vector2Int cell)
         {
-            Vector3 from = transform.position;
-            Vector3 to   = _renderer.CellToWorld(cell);
-            float   t    = 0f;
+            float duration = mode == MovementMode.ContinuousSlide ? continuousMoveTime : moveTime;
+            Vector3 from   = transform.position;
+            Vector3 to     = _renderer.CellToWorld(cell);
+            float   t      = 0f;
 
             while (t < 1f)
             {
-                t += Time.deltaTime / moveTime;
+                t += Time.deltaTime / duration;
                 transform.position = Vector3.Lerp(from, to, Mathf.SmoothStep(0f, 1f, Mathf.Min(t, 1f)));
                 yield return null;
             }

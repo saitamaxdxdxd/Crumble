@@ -12,16 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24b0d6ff7b3b344cea940a774f84d651, type: 3}
   m_Name: Level_06
   m_EditorClassIdentifier: Assembly-CSharp::Shrink.Level.LevelData
-  levelNumber: 5
+  levelNumber: 6
   mazeWidth: 20
   mazeHeight: 15
   mazeStyle: 0
-  seed: 5
+  seed: 6
   difficultyFactor: 0.8
   doorCount: 0
-  narrow06Count: 1
+  narrow06Count: 0
   narrow04Count: 1
+  trapOneshotCount: 1
+  trapDrainCount: 1
   starCount: 3
   starSizeBonus: 0.05
-  hasTimer: 0
-  timeLimit: 120
+  hasTimer: 1
+  timeLimit: 30
