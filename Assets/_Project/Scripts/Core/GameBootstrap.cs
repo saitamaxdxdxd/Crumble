@@ -60,6 +60,11 @@ namespace Shrink.Core
 
         private void Start()
         {
+            // Rendimiento mobile: 60 fps fijos, sin vsync, sin sleep
+            Application.targetFrameRate = 60;
+            QualitySettings.vSyncCount  = 0;
+            Screen.sleepTimeout         = SleepTimeout.NeverSleep;
+
             // Ocultar todos los logos al arrancar
             if (logos != null)
                 foreach (var entry in logos)

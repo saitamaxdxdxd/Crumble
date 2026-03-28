@@ -17,6 +17,8 @@ namespace Shrink.Maze
         /// <summary>Trampa de un solo uso — se convierte en WALL al pisarla.</summary>
         TRAP_ONESHOT,
         /// <summary>Trampa de drenaje — consume tamaño cada vez que se pisa.</summary>
-        TRAP_DRAIN
+        TRAP_DRAIN,
+        /// <summary>Pico — muerte instantánea al pisarlo, independientemente del tamaño.</summary>
+        SPIKE
     }
 }

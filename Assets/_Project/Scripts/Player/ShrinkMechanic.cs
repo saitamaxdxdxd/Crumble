@@ -99,6 +99,10 @@ namespace Shrink.Player
                     Events.GameEvents.RaiseTrapActivated(cell, CellType.TRAP_ONESHOT);
                     return true;
 
+                case CellType.SPIKE:
+                    Events.GameEvents.RaiseLevelFail();
+                    return true;
+
                 case CellType.EXIT:
                     return true;  // Manejado por SphereController/GameEvents
 

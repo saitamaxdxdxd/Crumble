@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Shrink.Core;
+using Shrink.Level;
 using Shrink.Player;
 using UnityEngine;
 
@@ -28,6 +29,7 @@ namespace Shrink.Maze
         [SerializeField] private Color colorCrumb        = new Color(1.00f, 0.85f, 0.30f);
         [SerializeField] private Color colorStar         = new Color(1.00f, 0.92f, 0.20f);
         [SerializeField] private Color colorTrapOneshot  = new Color(0.95f, 0.50f, 0.10f);
+        [SerializeField] private Color colorSpike        = new Color(0.90f, 0.05f, 0.05f);
         [SerializeField] private Color colorTrapDrain    = new Color(0.70f, 0.10f, 0.30f);
 
         // ──────────────────────────────────────────────────────────────────────
@@ -129,6 +131,16 @@ namespace Shrink.Maze
                                 ShapeFactory.GetSquare(), colorTrapOneshot * 1.4f, _trapParent, 2),
                             pos, cellSize * 0.30f, rotate45: true);
                         break;
+
+                    case CellType.SPIKE:
+                        CreateTile($"SP{x}_{y}", square, colorSpike, _floorParent, pos, cellSize * 0.85f, 1);
+                        // Cruz de picos: dos rectángulos perpendiculares en blanco
+                        var spGo = new GameObject($"SPIcon_{x}_{y}");
+                        spGo.transform.SetParent(_trapParent);
+                        spGo.transform.position = pos;
+                        CreateSpikeBar(spGo.transform, pos, cellSize, 0f);
+                        CreateSpikeBar(spGo.transform, pos, cellSize, 90f);
+                        break;
                 }
             }
         }
@@ -138,10 +150,22 @@ namespace Shrink.Maze
         /// Usa BFS respetando bloqueos de NARROW para garantizar que siempre son recolectables.
         /// Prefiere celdas alejadas del camino más corto (callejones, rutas alternativas).
         /// </summary>
-        public void SpawnStars(int count, float sizeBonus, int seed)
+        public void SpawnStars(int count, float sizeBonus, int seed, List<Vector2Int> manualCells = null)
         {
             Stars.Clear();
             CollectedStars = 0;
+
+            // Colocación manual: si hay celdas definidas en el editor, usarlas directamente.
+            if (manualCells != null && manualCells.Count > 0)
+            {
+                foreach (var cell in manualCells)
+                {
+                    if (!Data.InBounds(cell.x, cell.y)) continue;
+                    SpawnStarAt(cell, sizeBonus);
+                }
+                TotalStars = Stars.Count;
+                return;
+            }
 
             // 1. Solo celdas alcanzables con tamaño inicial (respeta NARROW)
             var reachable = GetReachableCells(Data.StartCell, initialSize: 1.0f);
@@ -226,20 +250,23 @@ namespace Shrink.Maze
 
             // 4. Crear visuals
             foreach (var cell in selectedCells)
-            {
-                Vector3 pos = CellToWorld(cell);
-                var go = ShapeFactory.CreateSprite($"Star_{cell.x}_{cell.y}",
-                             ShapeFactory.GetSquare(), colorStar, _starParent, sortingOrder: 3);
-                go.transform.position   = pos;
-                go.transform.localScale = Vector3.one * cellSize * 0.30f;
-                go.transform.rotation   = Quaternion.Euler(0f, 0f, 45f);
-
-                var star = go.AddComponent<Star>();
-                star.Initialize(cell, sizeBonus);
-                Stars[cell] = star;
-            }
+                SpawnStarAt(cell, sizeBonus);
 
             TotalStars = selectedCells.Count;
+        }
+
+        private void SpawnStarAt(Vector2Int cell, float sizeBonus)
+        {
+            if (Stars.ContainsKey(cell)) return;
+            Vector3 pos = CellToWorld(cell);
+            var go = ShapeFactory.CreateSprite($"Star_{cell.x}_{cell.y}",
+                         ShapeFactory.GetSquare(), colorStar, _starParent, sortingOrder: 3);
+            go.transform.position   = pos;
+            go.transform.localScale = Vector3.one * cellSize * 0.30f;
+            go.transform.rotation   = Quaternion.Euler(0f, 0f, 45f);
+            var star = go.AddComponent<Star>();
+            star.Initialize(cell, sizeBonus);
+            Stars[cell] = star;
         }
 
         /// <summary>
@@ -414,6 +441,16 @@ namespace Shrink.Maze
         // ──────────────────────────────────────────────────────────────────────
         // Helpers privados
         // ──────────────────────────────────────────────────────────────────────
+
+        /// <summary>Crea una barra rectangular girada para componer el icono de pico (cruz).</summary>
+        private void CreateSpikeBar(Transform parent, Vector3 pos, float size, float angle)
+        {
+            var go = ShapeFactory.CreateSprite("Bar", ShapeFactory.GetSquare(),
+                         Color.white * 0.95f, parent, sortingOrder: 2);
+            go.transform.position   = pos;
+            go.transform.localScale = new Vector3(size * 0.18f, size * 0.72f, 1f);
+            go.transform.rotation   = Quaternion.Euler(0f, 0f, angle);
+        }
 
         private Transform CreateParent(string name)
         {

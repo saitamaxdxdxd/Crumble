@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Shrink.Maze
@@ -89,6 +90,50 @@ namespace Shrink.Maze
         /// Devuelve true si la celda es transitable (no es WALL).
         /// </summary>
         public bool IsWalkable(int x, int y) => InBounds(x, y) && Grid[x, y] != CellType.WALL;
+
+        /// <summary>
+        /// Reconstruye el camino más corto de START a EXIT mediante BFS.
+        /// Devuelve la lista de celdas en orden desde START hasta EXIT,
+        /// o lista vacía si no hay solución.
+        /// </summary>
+        public List<Vector2Int> GetShortestPath()
+        {
+            var queue  = new Queue<Vector2Int>();
+            var parent = new Dictionary<Vector2Int, Vector2Int>();
+            var dirs   = new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+            queue.Enqueue(StartCell);
+            parent[StartCell] = StartCell;
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (current == ExitCell) break;
+
+                foreach (var d in dirs)
+                {
+                    var next = current + d;
+                    if (!InBounds(next.x, next.y))        continue;
+                    if (Grid[next.x, next.y] == CellType.WALL) continue;
+                    if (parent.ContainsKey(next))          continue;
+                    parent[next] = current;
+                    queue.Enqueue(next);
+                }
+            }
+
+            var path = new List<Vector2Int>();
+            if (!parent.ContainsKey(ExitCell)) return path;
+
+            var step = ExitCell;
+            while (step != StartCell)
+            {
+                path.Add(step);
+                step = parent[step];
+            }
+            path.Add(StartCell);
+            path.Reverse();
+            return path;
+        }
 
         /// <summary>
         /// Resumen de jugabilidad para debug.

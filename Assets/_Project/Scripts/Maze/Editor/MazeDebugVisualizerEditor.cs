@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Shrink.Maze
 {
     [CustomEditor(typeof(MazeDebugVisualizer))]
-    public class MazeDebugVisualizerEditor : Editor
+    public class MazeDebugVisualizerEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {

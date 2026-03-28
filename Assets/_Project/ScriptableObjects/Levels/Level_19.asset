@@ -10,26 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24b0d6ff7b3b344cea940a774f84d651, type: 3}
-  m_Name: Level_02
+  m_Name: Level_19
   m_EditorClassIdentifier: Assembly-CSharp::Shrink.Level.LevelData
-  levelNumber: 2
-  mazeWidth: 20
-  mazeHeight: 12
-  mazeStyle: 0
-  seed: 2
-  difficultyFactor: 0.8
-  doorCount: 0
-  narrow06Count: 0
-  narrow04Count: 0
-  trapOneshotCount: 0
-  trapDrainCount: 0
-  spikeCount: 0
-  starCount: 3
+  levelNumber: 19
+  mazeWidth: 25
+  mazeHeight: 15
+  mazeStyle: 1
+  seed: 0
+  difficultyFactor: 0.85
+  doorCount: 2
+  narrow06Count: 3
+  narrow04Count: 2
+  trapOneshotCount: 3
+  trapDrainCount: 3
+  starCount: 4
   starSizeBonus: 0.05
   hasTimer: 0
   timeLimit: 120
   manualOverrides: []
-  manualStarCells:
-  - {x: 15, y: 9}
-  - {x: 11, y: 4}
-  - {x: 2, y: 10}
+  manualStarCells: []

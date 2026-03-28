@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Shrink.Maze;
 using UnityEngine;
 
@@ -35,6 +36,7 @@ namespace Shrink.Level
         [Header("Trampas")]
         [SerializeField] private int trapOneshotCount = 0;
         [SerializeField] private int trapDrainCount   = 0;
+        [SerializeField] private int spikeCount       = 0;
 
         [Header("Estrellas")]
         [SerializeField] private int   starCount     = 3;
@@ -43,6 +45,10 @@ namespace Shrink.Level
         [Header("Timer")]
         [SerializeField] private bool  hasTimer  = false;
         [SerializeField] private float timeLimit = 120f;
+
+        [Header("Overrides manuales (editor visual)")]
+        [SerializeField] private List<CellOverride> manualOverrides = new();
+        [SerializeField] private List<Vector2Int>   manualStarCells = new();
 
         // ──────────────────────────────────────────────────────────────────────
         // Propiedades de solo lectura
@@ -73,7 +79,7 @@ namespace Shrink.Level
         public NarrowConfig NarrowConfig   => new NarrowConfig(narrow06Count, narrow04Count);
 
         /// <summary>Configuración de trampas derivada de los contadores.</summary>
-        public TrapConfig   TrapConfig     => new TrapConfig(trapOneshotCount, trapDrainCount);
+        public TrapConfig   TrapConfig     => new TrapConfig(trapOneshotCount, trapDrainCount, spikeCount);
 
         /// <summary>Estrellas a repartir por el maze.</summary>
         public int        StarCount        => starCount;
@@ -86,5 +92,14 @@ namespace Shrink.Level
 
         /// <summary>Segundos disponibles (solo relevante si HasTimer es true).</summary>
         public float      TimeLimit        => timeLimit;
+
+        /// <summary>Overrides manuales de tipo de celda aplicados tras la generación procedural.</summary>
+        public List<CellOverride> ManualOverrides => manualOverrides;
+
+        /// <summary>
+        /// Posiciones manuales de estrellas. Si la lista tiene elementos, reemplaza
+        /// completamente el algoritmo de colocación automática.
+        /// </summary>
+        public List<Vector2Int>   ManualStarCells => manualStarCells;
     }
 }

@@ -60,6 +60,7 @@ FX/Particles/
 | L | Localización | ✅ Completo | EN, ES, PT, FR, DE — auto-detect + guardado en SaveManager |
 | 8 | UI completa | ✅ Completo | Boot + Menu + LevelSelect + GameResult + Localización |
 | 3.5 | Enemigos | ⬜ Pendiente (al final) | Ver sección Enemigos |
+| E | Editor visual de niveles | ⬜ Pendiente | Ver sección Editor Visual |
 
 ## Generación de maze — MazeStyle
 
@@ -405,6 +406,61 @@ Colocar `TRAP_DRAIN` preferentemente en celdas adyacentes a estrellas para que r
 - **Alternativa intermedia**: mantener la forma circular base + partículas de arena decorativas alrededor (legibilidad de tamaño sin perder la estética)
 - **Bloqueante**: legibilidad de tamaño en pantalla pequeña y rendimiento en mobile
 - Revisar cuando todos los sistemas estén completos y el juego sea jugable
+
+## Editor Visual de Niveles — Sistema E (pendiente)
+
+Herramienta de Unity Editor para curar manualmente el contenido de cada nivel después de la generación procedural. El maze se sigue generando por código — el editor solo permite sobrescribir celdas específicas.
+
+### Qué se puede editar
+- **Estrellas**: mover, añadir o quitar posiciones (override del algoritmo greedy)
+- **Trampas**: colocar `TRAP_DRAIN` o `TRAP_ONESHOT` en celdas específicas
+- **Puertas**: añadir `DOOR` manualmente además de las generadas
+- **NARROW**: colocar `NARROW_06` o `NARROW_04` en pasillos concretos
+- **Masa local**: celdas con bonus/penalización de tamaño (idea futura)
+
+### Arquitectura
+
+**`LevelData`** añade campo:
+```csharp
+[SerializeField] public List<CellOverride> manualOverrides;
+
+[Serializable]
+public struct CellOverride
+{
+    public Vector2Int cell;
+    public CellType   type;
+}
+```
+
+**`MazeGenerator` / `MazeRenderer`** aplica los overrides después de generar, antes de renderizar.
+
+**`MazeLevelEditor`** — ventana custom en `Scripts/Maze/Editor/`:
+- Genera el maze de la LevelData seleccionada y lo dibuja en Scene view
+- Click izquierdo sobre una celda + tipo seleccionado → añade override a `manualOverrides`
+- Click derecho → elimina override de esa celda
+- Botón "Limpiar todos los overrides"
+- Overlay de colores: overrides manuales se muestran distintos a los procedurales
+- Se guarda automáticamente en el ScriptableObject al modificar
+
+### Flujo de uso
+1. Seleccionar `LevelData` en Project
+2. Abrir ventana **Window → Shrink → Level Editor**
+3. El maze se genera con la semilla del nivel y se previsualiza
+4. Seleccionar tipo de celda en la toolbar (estrella, trampa, puerta, etc.)
+5. Click en las celdas del maze para colocar overrides
+6. Los cambios se guardan en el ScriptableObject → el juego los aplica en runtime
+
+### Archivos a crear
+```
+Scripts/Maze/Editor/MazeLevelEditor.cs   ← EditorWindow principal
+```
+Modificar:
+```
+Scripts/Level/LevelData.cs              ← añadir manualOverrides
+Scripts/Maze/MazeGenerator.cs           ← aplicar overrides tras generar
+```
+
+---
 
 ## Lo que NO hacer
 

@@ -554,7 +554,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Shrink.UI.GameResultController
   _victoryPanel: {fileID: 1672427815}
-  _victoryStars: []
+  _victoryStars:
+  - {fileID: 1775333129}
+  - {fileID: 948805927}
+  - {fileID: 299359740}
   _nextButton: {fileID: 750310657}
   _victoryMenuButton: {fileID: 107670760}
   _starFilledColor: {r: 1, g: 0.85, b: 0, a: 1}
@@ -939,7 +942,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &511288073
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2544,10 +2547,9 @@ MonoBehaviour:
   _hud: {fileID: 58639400}
   _pauseMap: {fileID: 58639399}
   _gameResult: {fileID: 58639405}
-  movementMode: 2
-  moveTime: 0.1
-  continuousMoveTime: 0.18
-  swipeMinDist: 40
+  moveTimeSlow: 0.22
+  moveTimeFast: 0.08
+  joystickDeadzone: 25
 --- !u!114 &1120431092
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5345,7 +5347,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 164ef7794ac174525b910b6b80701af5, type: 2}
   - {fileID: 11400000, guid: ff319b88b0afe49c7a92733bf44402a7, type: 2}
   - {fileID: 11400000, guid: 84901e619e9674222858de366b6c85f3, type: 2}
-  startLevelIndex: 0
+  startLevelIndex: 2
 --- !u!4 &2130069601
 Transform:
   m_ObjectHideFlags: 0

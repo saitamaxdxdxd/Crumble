@@ -21,7 +21,14 @@ MonoBehaviour:
   doorCount: 0
   narrow06Count: 0
   narrow04Count: 0
+  trapOneshotCount: 0
+  trapDrainCount: 0
   starCount: 3
   starSizeBonus: 0.05
   hasTimer: 0
   timeLimit: 120
+  manualOverrides: []
+  manualStarCells:
+  - {x: 8, y: 10}
+  - {x: 3, y: 9}
+  - {x: 5, y: 5}

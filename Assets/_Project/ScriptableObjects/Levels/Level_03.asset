@@ -21,7 +21,35 @@ MonoBehaviour:
   doorCount: 0
   narrow06Count: 0
   narrow04Count: 0
+  trapOneshotCount: 0
+  trapDrainCount: 0
+  spikeCount: 0
   starCount: 3
   starSizeBonus: 0.05
   hasTimer: 0
   timeLimit: 120
+  manualOverrides:
+  - cell: {x: 17, y: 3}
+    type: 1
+  - cell: {x: 11, y: 2}
+    type: 1
+  - cell: {x: 17, y: 2}
+    type: 1
+  - cell: {x: 11, y: 1}
+    type: 1
+  - cell: {x: 12, y: 1}
+    type: 1
+  - cell: {x: 13, y: 1}
+    type: 1
+  - cell: {x: 14, y: 1}
+    type: 1
+  - cell: {x: 15, y: 1}
+    type: 1
+  - cell: {x: 16, y: 1}
+    type: 1
+  - cell: {x: 17, y: 1}
+    type: 1
+  manualStarCells:
+  - {x: 5, y: 4}
+  - {x: 17, y: 4}
+  - {x: 12, y: 1}

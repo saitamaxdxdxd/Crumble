@@ -411,7 +411,7 @@ namespace Shrink.Maze
         private static void InsertTraps(CellType[,] grid, int width, int height,
                                          System.Random rng, TrapConfig cfg)
         {
-            if (cfg.OneshotCount == 0 && cfg.DrainCount == 0) return;
+            if (cfg.OneshotCount == 0 && cfg.DrainCount == 0 && cfg.SpikeCount == 0) return;
 
             // Candidatas: cualquier celda transitable excepto START, EXIT, DOOR y NARROW
             var candidates = new List<Vector2Int>();
@@ -427,6 +427,7 @@ namespace Shrink.Maze
 
             int placedOneshot = 0;
             int placedDrain   = 0;
+            int placedSpike   = 0;
 
             foreach (var cell in candidates)
             {
@@ -440,8 +441,15 @@ namespace Shrink.Maze
                     grid[cell.x, cell.y] = CellType.TRAP_DRAIN;
                     placedDrain++;
                 }
+                else if (placedSpike < cfg.SpikeCount)
+                {
+                    grid[cell.x, cell.y] = CellType.SPIKE;
+                    placedSpike++;
+                }
 
-                if (placedOneshot >= cfg.OneshotCount && placedDrain >= cfg.DrainCount) break;
+                if (placedOneshot >= cfg.OneshotCount &&
+                    placedDrain   >= cfg.DrainCount   &&
+                    placedSpike   >= cfg.SpikeCount) break;
             }
         }
 
@@ -564,10 +572,14 @@ namespace Shrink.Maze
         /// <summary>Número de trampas TRAP_DRAIN a insertar.</summary>
         public int DrainCount;
 
-        public TrapConfig(int oneshotCount, int drainCount)
+        /// <summary>Número de picos SPIKE a insertar.</summary>
+        public int SpikeCount;
+
+        public TrapConfig(int oneshotCount, int drainCount, int spikeCount = 0)
         {
             OneshotCount = oneshotCount;
             DrainCount   = drainCount;
+            SpikeCount   = spikeCount;
         }
     }
 

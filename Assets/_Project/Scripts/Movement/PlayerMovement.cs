@@ -7,11 +7,9 @@ using UnityEngine.InputSystem;
 namespace Shrink.Movement
 {
     /// <summary>
-    /// Mueve la esfera por el maze con tres modos:
-    /// StepByStep      → una celda por input (testing con teclado).
-    /// SlideToWall     → Smart Slide: para en paredes, NARROW e intersecciones.
-    /// ContinuousSlide → para solo en paredes/NARROW; el jugador puede redirigir
-    ///                   en cualquier momento swipeando una nueva dirección.
+    /// Mueve la esfera por el maze mediante un joystick flotante invisible.
+    /// Mientras el dedo está arrastrado (delta >= joystickDeadzone) la esfera avanza.
+    /// Al soltar el dedo, la esfera para al terminar la celda actual.
     /// </summary>
     [RequireComponent(typeof(Player.SphereController))]
     [RequireComponent(typeof(Player.ShrinkMechanic))]
@@ -21,12 +19,9 @@ namespace Shrink.Movement
         // Config
         // ──────────────────────────────────────────────────────────────────────
 
-        public enum MovementMode { StepByStep, SlideToWall, ContinuousSlide }
-
-        private MovementMode mode              = MovementMode.SlideToWall;
-        private float        moveTime         = 0.10f;
-        private float        continuousMoveTime = 0.18f;
-        private float        swipeMinDist     = 40f;
+        private float moveTimeSlow   = 0.22f;  // tamaño máximo (1.0) — más lento
+        private float moveTimeFast   = 0.08f;  // tamaño mínimo (0.15) — más rápido
+        private float joystickDeadzone = 20f;
 
         // ──────────────────────────────────────────────────────────────────────
         // Referencias
@@ -41,24 +36,26 @@ namespace Shrink.Movement
         // ──────────────────────────────────────────────────────────────────────
 
         private bool       _isMoving;
-        private Vector2    _swipeStart;
-        private bool       _swipeActive;
-        private Vector2Int _continuousDir;
+        private bool       _joystickActive;
+        private Vector2    _joystickOrigin;
+        private Vector2Int _joystickDir;
+        private Vector2Int _currentDir;
 
         // ──────────────────────────────────────────────────────────────────────
         // Inicialización
         // ──────────────────────────────────────────────────────────────────────
 
-        public void Initialize(MazeRenderer mazeRenderer, MovementMode movementMode,
-                               float cellMoveTime, float cellContinuousMoveTime, float minSwipeDist)
+        /// <summary>
+        /// Llamar desde LevelLoader al construir el nivel.
+        /// </summary>
+        public void Initialize(MazeRenderer mazeRenderer, float slowTime, float fastTime, float deadzone)
         {
-            _sphere            = GetComponent<Player.SphereController>();
-            _shrink            = GetComponent<Player.ShrinkMechanic>();
-            _renderer          = mazeRenderer;
-            mode               = movementMode;
-            moveTime           = cellMoveTime;
-            continuousMoveTime = cellContinuousMoveTime;
-            swipeMinDist       = minSwipeDist;
+            _sphere          = GetComponent<Player.SphereController>();
+            _shrink          = GetComponent<Player.ShrinkMechanic>();
+            _renderer        = mazeRenderer;
+            moveTimeSlow     = slowTime;
+            moveTimeFast     = fastTime;
+            joystickDeadzone = deadzone;
 
             GameEvents.OnLevelFail     += OnGameOver;
             GameEvents.OnLevelComplete += OnGameOver;
@@ -73,7 +70,7 @@ namespace Shrink.Movement
         private void OnGameOver() => _isMoving = true;
 
         // ──────────────────────────────────────────────────────────────────────
-        // Update — lectura de input
+        // Update
         // ──────────────────────────────────────────────────────────────────────
 
         private void Update()
@@ -81,31 +78,61 @@ namespace Shrink.Movement
             if (!_sphere.IsAlive) return;
 
             Vector2Int dir = ReadKeyboardInput();
-            if (dir == Vector2Int.zero) dir = ReadSwipeInput();
+            if (dir == Vector2Int.zero) dir = ReadJoystickInput();
 
-            if (mode == MovementMode.ContinuousSlide)
+            if (_isMoving)
             {
-                if (dir != Vector2Int.zero)
-                {
-                    if (!_isMoving)
-                        StartCoroutine(ContinuousSlideCoroutine(dir));
-                    else
-                        _continuousDir = dir; // redirigir en el siguiente paso
-                }
+                _currentDir = dir; // permite redirigir mientras se completa la celda actual
                 return;
             }
 
-            if (_isMoving) return;
             if (dir == Vector2Int.zero) return;
 
-            if (mode == MovementMode.SlideToWall)
-                StartCoroutine(SlideCoroutine(dir));
-            else
-                TryMoveOneStep(dir);
+            _currentDir = dir;
+            StartCoroutine(SlideCoroutine());
         }
 
         // ──────────────────────────────────────────────────────────────────────
-        // Input
+        // Coroutine de movimiento
+        // ──────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Avanza celda a celda mientras haya dirección activa.
+        /// Para al soltar el dedo (dir == zero), al chocar con una pared o al llegar al EXIT.
+        /// </summary>
+        private IEnumerator SlideCoroutine()
+        {
+            _isMoving = true;
+
+            while (true)
+            {
+                if (_currentDir == Vector2Int.zero) break;
+
+                Vector2Int next = _sphere.CurrentCell + _currentDir;
+
+                if (!CanEnter(next, out bool narrowBlocked))
+                {
+                    if (narrowBlocked) GameEvents.RaiseNarrowPassageBlocked(next);
+                    break;
+                }
+
+                yield return StartCoroutine(LerpToCell(next));
+                _sphere.SetCell(next);
+                _shrink.ProcessCell(next);
+
+                if (_renderer.Data.Grid[next.x, next.y] == CellType.EXIT)
+                {
+                    GameEvents.RaiseLevelComplete();
+                    break;
+                }
+            }
+
+            _isMoving   = false;
+            _currentDir = Vector2Int.zero;
+        }
+
+        // ──────────────────────────────────────────────────────────────────────
+        // Input — teclado (testing)
         // ──────────────────────────────────────────────────────────────────────
 
         private Vector2Int ReadKeyboardInput()
@@ -113,185 +140,85 @@ namespace Shrink.Movement
             var kb = Keyboard.current;
             if (kb == null) return Vector2Int.zero;
 
-            if (kb.wKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame)    return Vector2Int.up;
-            if (kb.sKey.wasPressedThisFrame || kb.downArrowKey.wasPressedThisFrame)  return Vector2Int.down;
-            if (kb.aKey.wasPressedThisFrame || kb.leftArrowKey.wasPressedThisFrame)  return Vector2Int.left;
-            if (kb.dKey.wasPressedThisFrame || kb.rightArrowKey.wasPressedThisFrame) return Vector2Int.right;
+            if (kb.wKey.isPressed || kb.upArrowKey.isPressed)    return Vector2Int.up;
+            if (kb.sKey.isPressed || kb.downArrowKey.isPressed)  return Vector2Int.down;
+            if (kb.aKey.isPressed || kb.leftArrowKey.isPressed)  return Vector2Int.left;
+            if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) return Vector2Int.right;
             return Vector2Int.zero;
         }
 
-        private Vector2Int ReadSwipeInput()
+        // ──────────────────────────────────────────────────────────────────────
+        // Input — joystick flotante invisible
+        // ──────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Floating joystick invisible: toca en cualquier punto y arrastra.
+        /// La dirección se registra en cuanto el delta supera <see cref="joystickDeadzone"/> px,
+        /// sin esperar a levantar el dedo. El origen se re-ancla al registrar cada nueva
+        /// dirección, así cambiar de dirección siempre cuesta solo el deadzone desde donde
+        /// está el dedo en ese momento.
+        /// </summary>
+        private Vector2Int ReadJoystickInput()
         {
             var ts = Touchscreen.current;
             if (ts == null) return Vector2Int.zero;
 
-            if (ts.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began)
+            var touch = ts.primaryTouch;
+            var phase = touch.phase.ReadValue();
+
+            if (phase == UnityEngine.InputSystem.TouchPhase.Began)
             {
-                _swipeStart  = ts.primaryTouch.position.ReadValue();
-                _swipeActive = true;
+                _joystickOrigin = touch.position.ReadValue();
+                _joystickActive = true;
+                _joystickDir    = Vector2Int.zero;
             }
-            else if (ts.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Ended && _swipeActive)
+
+            if (!_joystickActive) return Vector2Int.zero;
+
+            if (phase == UnityEngine.InputSystem.TouchPhase.Ended ||
+                phase == UnityEngine.InputSystem.TouchPhase.Canceled)
             {
-                _swipeActive = false;
-                Vector2 delta = ts.primaryTouch.position.ReadValue() - _swipeStart;
+                _joystickActive = false;
+                _joystickDir    = Vector2Int.zero;
+                return Vector2Int.zero;
+            }
 
-                if (delta.magnitude < swipeMinDist) return Vector2Int.zero;
+            Vector2 currentPos = touch.position.ReadValue();
+            Vector2 delta      = currentPos - _joystickOrigin;
 
-                return Mathf.Abs(delta.x) > Mathf.Abs(delta.y)
+            if (delta.magnitude >= joystickDeadzone)
+            {
+                Vector2Int newDir = Mathf.Abs(delta.x) > Mathf.Abs(delta.y)
                     ? (delta.x > 0 ? Vector2Int.right : Vector2Int.left)
                     : (delta.y > 0 ? Vector2Int.up    : Vector2Int.down);
-            }
 
-            return Vector2Int.zero;
-        }
-
-        // ──────────────────────────────────────────────────────────────────────
-        // Modo SlideToWall
-        // ──────────────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Smart Slide: desliza celda a celda y para en cualquiera de estas condiciones:
-        /// 1. La siguiente celda es pared o pasaje bloqueado.
-        /// 2. La celda actual tiene salidas perpendiculares (intersección o cuarto abierto).
-        /// 3. Se llega al EXIT.
-        /// Así el jugador siempre puede girar donde tiene opciones reales.
-        /// </summary>
-        /// <summary>
-        /// Smart Slide: para en pared, pasaje bloqueado, exit,
-        /// o cualquier celda con salidas perpendiculares (intersección o cuarto).
-        /// </summary>
-        private IEnumerator SlideCoroutine(Vector2Int dir)
-        {
-            _isMoving = true;
-
-            while (true)
-            {
-                Vector2Int next = _sphere.CurrentCell + dir;
-
-                // Parar: pared o pasaje bloqueado
-                if (!CanEnter(next, out bool narrowBlocked))
+                if (newDir != _joystickDir)
                 {
-                    if (narrowBlocked) GameEvents.RaiseNarrowPassageBlocked(next);
-                    break;
-                }
-
-                yield return StartCoroutine(LerpToCell(next));
-                _sphere.SetCell(next);
-                _shrink.ProcessCell(next);
-
-                // Parar: exit
-                if (_renderer.Data.Grid[next.x, next.y] == CellType.EXIT)
-                {
-                    GameEvents.RaiseLevelComplete();
-                    break;
-                }
-
-                // Parar: siguiente celda es pared
-                if (!CanEnter(next + dir, out _)) break;
-
-                // Parar: hay salidas perpendiculares (el jugador puede girar aquí)
-                if (HasPerpendicularExit(next, dir)) break;
-            }
-
-            _isMoving = false;
-        }
-
-        // ──────────────────────────────────────────────────────────────────────
-        // Modo ContinuousSlide
-        // ──────────────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Continuous Slide: avanza indefinidamente en la dirección activa.
-        /// Para solo en pared o NARROW bloqueado.
-        /// El jugador puede cambiar de dirección en cualquier momento — el cambio
-        /// se aplica al llegar al borde de la celda actual.
-        /// </summary>
-        private IEnumerator ContinuousSlideCoroutine(Vector2Int initialDir)
-        {
-            _isMoving      = true;
-            _continuousDir = initialDir;
-
-            while (true)
-            {
-                Vector2Int next = _sphere.CurrentCell + _continuousDir;
-
-                if (!CanEnter(next, out bool narrowBlocked))
-                {
-                    if (narrowBlocked) GameEvents.RaiseNarrowPassageBlocked(next);
-                    break;
-                }
-
-                yield return StartCoroutine(LerpToCell(next));
-                _sphere.SetCell(next);
-                _shrink.ProcessCell(next);
-
-                if (_renderer.Data.Grid[next.x, next.y] == CellType.EXIT)
-                {
-                    GameEvents.RaiseLevelComplete();
-                    break;
+                    _joystickDir    = newDir;
+                    _joystickOrigin = currentPos - new Vector2(newDir.x, newDir.y) * (joystickDeadzone * 0.5f);
                 }
             }
 
-            _isMoving      = false;
-            _continuousDir = Vector2Int.zero;
-        }
-
-        /// <summary>
-        /// Devuelve true si la celda tiene al menos una salida perpendicular al deslizamiento.
-        /// </summary>
-        private bool HasPerpendicularExit(Vector2Int cell, Vector2Int slideDir)
-        {
-            Vector2Int p1 = slideDir.x != 0 ? Vector2Int.up   : Vector2Int.left;
-            Vector2Int p2 = slideDir.x != 0 ? Vector2Int.down : Vector2Int.right;
-            return CanEnter(cell + p1, out _) || CanEnter(cell + p2, out _);
+            return _joystickDir;
         }
 
         // ──────────────────────────────────────────────────────────────────────
-        // Modo StepByStep
-        // ──────────────────────────────────────────────────────────────────────
-
-        private void TryMoveOneStep(Vector2Int dir)
-        {
-            Vector2Int next = _sphere.CurrentCell + dir;
-            if (!CanEnter(next, out bool narrowBlocked))
-            {
-                if (narrowBlocked) GameEvents.RaiseNarrowPassageBlocked(next);
-                return;
-            }
-            StartCoroutine(StepCoroutine(next));
-        }
-
-        private IEnumerator StepCoroutine(Vector2Int targetCell)
-        {
-            _isMoving = true;
-            yield return StartCoroutine(LerpToCell(targetCell));
-
-            _sphere.SetCell(targetCell);
-            _shrink.ProcessCell(targetCell);
-
-            if (_renderer.Data.Grid[targetCell.x, targetCell.y] == CellType.EXIT)
-                GameEvents.RaiseLevelComplete();
-
-            _isMoving = false;
-        }
-
-        // ──────────────────────────────────────────────────────────────────────
-        // Shared helpers
+        // Helpers
         // ──────────────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Devuelve true si la esfera puede entrar a <paramref name="cell"/>.
-        /// <paramref name="narrowBlocked"/> indica si el freno fue por tamaño (no por muro).
+        /// <paramref name="narrowBlocked"/> indica si el freno fue por tamaño, no por muro.
         /// </summary>
         private bool CanEnter(Vector2Int cell, out bool narrowBlocked)
         {
             narrowBlocked = false;
             MazeData data = _renderer.Data;
 
-            if (!data.InBounds(cell.x, cell.y))               return false;
+            if (!data.InBounds(cell.x, cell.y))  return false;
 
             CellType ct = data.Grid[cell.x, cell.y];
-            if (ct == CellType.WALL)                           return false;
+            if (ct == CellType.WALL)             return false;
 
             if (ct == CellType.NARROW_06 && _sphere.CurrentSize >= 0.6f)
             { narrowBlocked = true; return false; }
@@ -302,13 +229,19 @@ namespace Shrink.Movement
             return true;
         }
 
-        /// <summary>Lerp suavizado desde la posición actual hasta la celda destino.</summary>
+        /// <summary>
+        /// Lerp suavizado desde la posición actual hasta la celda destino.
+        /// La velocidad es dinámica: a menor tamaño, menor moveTime (más rápido).
+        /// </summary>
         private IEnumerator LerpToCell(Vector2Int cell)
         {
-            float duration = mode == MovementMode.ContinuousSlide ? continuousMoveTime : moveTime;
-            Vector3 from   = transform.position;
-            Vector3 to     = _renderer.CellToWorld(cell);
-            float   t      = 0f;
+            // t=0 → tamaño mínimo (rápido) | t=1 → tamaño máximo (lento)
+            float sizeT    = Mathf.InverseLerp(Player.SphereController.MinSize, Player.SphereController.InitialSize, _sphere.CurrentSize);
+            float duration = Mathf.Lerp(moveTimeFast, moveTimeSlow, sizeT);
+
+            Vector3 from = transform.position;
+            Vector3 to   = _renderer.CellToWorld(cell);
+            float   t    = 0f;
 
             while (t < 1f)
             {

@@ -27,10 +27,9 @@ namespace Shrink.Level
         [SerializeField] private GameResultController _gameResult;
 
         [Header("Movimiento")]
-        [SerializeField] private PlayerMovement.MovementMode movementMode          = PlayerMovement.MovementMode.SlideToWall;
-        [SerializeField] private float                       moveTime              = 0.10f;
-        [SerializeField] private float                       continuousMoveTime    = 0.18f;
-        [SerializeField] private float                       swipeMinDist          = 40f;
+        [SerializeField] private float moveTimeSlow     = 0.22f;
+        [SerializeField] private float moveTimeFast     = 0.08f;
+        [SerializeField] private float joystickDeadzone = 20f;
 
         // ──────────────────────────────────────────────────────────────────────
         // Referencias runtime
@@ -100,6 +99,26 @@ namespace Shrink.Level
         // Internos
         // ──────────────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Aplica los overrides manuales del LevelData sobre el grid ya generado.
+        /// Solo sobreescribe celdas transitables — nunca WALL, START ni EXIT.
+        /// </summary>
+        private void ApplyManualOverrides(MazeData mazeData, LevelData levelData)
+        {
+            if (levelData.ManualOverrides == null || levelData.ManualOverrides.Count == 0) return;
+
+            foreach (var o in levelData.ManualOverrides)
+            {
+                if (!mazeData.InBounds(o.cell.x, o.cell.y)) continue;
+
+                CellType existing = mazeData.Grid[o.cell.x, o.cell.y];
+                if (existing == CellType.START || existing == CellType.EXIT)
+                    continue;
+
+                mazeData.Grid[o.cell.x, o.cell.y] = o.type;
+            }
+        }
+
         private void EnsureCamera()
         {
             var camGo = UnityEngine.Camera.main != null
@@ -134,11 +153,14 @@ namespace Shrink.Level
                 return;
             }
 
+            // ── Overrides manuales ────────────────────────────────────────────
+            ApplyManualOverrides(mazeData, levelData);
+
             // ── Maze ──────────────────────────────────────────────────────────
             var mazeGo = new GameObject("Maze");
             _renderer  = mazeGo.AddComponent<MazeRenderer>();
             _renderer.Render(mazeData);
-            _renderer.SpawnStars(levelData.StarCount, levelData.StarSizeBonus, seed);
+            _renderer.SpawnStars(levelData.StarCount, levelData.StarSizeBonus, seed, levelData.ManualStarCells);
 
             // ── Player ────────────────────────────────────────────────────────
             if (_playerPrefab == null)
@@ -154,7 +176,7 @@ namespace Shrink.Level
 
             _sphere.Initialize(_renderer, mazeData.StartCell);
             _shrink.Initialize(_renderer, levelData.DifficultyFactor);
-            _movement.Initialize(_renderer, movementMode, moveTime, continuousMoveTime, swipeMinDist);
+            _movement.Initialize(_renderer, moveTimeSlow, moveTimeFast, joystickDeadzone);
 
             // ── Cámara ────────────────────────────────────────────────────────
             float ortho = Mathf.Max(levelData.MazeWidth, levelData.MazeHeight)
