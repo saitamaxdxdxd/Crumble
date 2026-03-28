@@ -78,6 +78,7 @@ namespace Shrink.Core
             yield return null; // esperar un frame para que todos los Awake corran
 
             audioManager.LoadSavedVolumes();
+            LocalizationManager.Init();
 
             if (logos != null)
             {

@@ -19,12 +19,9 @@ namespace Shrink.UI
         [SerializeField] private Button   _movementButton;
         [SerializeField] private TMP_Text _movementButtonText;
 
-        private static readonly string[] MovementLabels =
-        {
-            "◀  SLIDE  ▶",
-            "◀  CONTINUO  ▶",
-            "◀  PASO A PASO  ▶",
-        };
+        [Header("Idioma")]
+        [SerializeField] private Button   _languageButton;
+        [SerializeField] private TMP_Text _languageButtonText;
 
         private int _currentMode;
 
@@ -37,6 +34,7 @@ namespace Shrink.UI
             _sfxSlider.onValueChanged.AddListener(OnSFXChanged);
             _musicSlider.onValueChanged.AddListener(OnMusicChanged);
             _movementButton.onClick.AddListener(OnMovementPressed);
+            if (_languageButton != null) _languageButton.onClick.AddListener(OnLanguagePressed);
         }
 
         // ──────────────────────────────────────────────────────────────────────
@@ -54,6 +52,7 @@ namespace Shrink.UI
 
             _currentMode = SaveManager.Instance?.Data.settings.movementMode ?? 0;
             UpdateMovementLabel();
+            UpdateLanguageLabel();
         }
 
         // ──────────────────────────────────────────────────────────────────────
@@ -66,11 +65,34 @@ namespace Shrink.UI
         public void OnMovementPressed()
         {
             AudioManager.Instance?.PlayButtonTap();
-            _currentMode = (_currentMode + 1) % MovementLabels.Length;
+            _currentMode = (_currentMode + 1) % 3;
             SaveManager.Instance?.SaveMovementMode(_currentMode);
             UpdateMovementLabel();
         }
 
-        private void UpdateMovementLabel() => _movementButtonText.text = MovementLabels[_currentMode];
+        private void UpdateMovementLabel()
+        {
+            _movementButtonText.text = _currentMode switch
+            {
+                0 => Core.LocalizationManager.Get("move_slide"),
+                1 => Core.LocalizationManager.Get("move_cont"),
+                _ => Core.LocalizationManager.Get("move_step"),
+            };
+        }
+
+        public void OnLanguagePressed()
+        {
+            AudioManager.Instance?.PlayButtonTap();
+            Core.LocalizationManager.CycleNext();
+            UpdateLanguageLabel();
+            // Actualizar el label del movimiento ya que también está localizado
+            UpdateMovementLabel();
+        }
+
+        private void UpdateLanguageLabel()
+        {
+            if (_languageButtonText != null)
+                _languageButtonText.text = $"◀  {Core.LocalizationManager.CurrentLanguageName}  ▶";
+        }
     }
 }

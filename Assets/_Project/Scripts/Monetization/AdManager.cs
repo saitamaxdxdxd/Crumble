@@ -156,7 +156,7 @@ namespace Shrink.Monetization
         /// Solo disponible una vez por nivel y si no compró "no_ads".
         /// </summary>
         /// <param name="onUnavailable">Callback si el ad no está disponible.</param>
-        public void ShowRewarded(Action onUnavailable = null)
+        public void ShowRewarded(Action onUnavailable = null, Action onClosed = null)
         {
             if (AdsDisabled() || _rewardedUsedThisLevel)
             {
@@ -177,7 +177,11 @@ namespace Shrink.Monetization
                 Debug.Log("[AdManager] Recompensa ganada.");
                 OnRewardEarned?.Invoke();
             });
-            _rewardedAd.OnAdFullScreenContentClosed += () => LoadRewarded();
+            _rewardedAd.OnAdFullScreenContentClosed += () =>
+            {
+                onClosed?.Invoke();
+                LoadRewarded();
+            };
         }
 
         /// <summary>True si el jugador puede ver el rewarded ad en este nivel.</summary>

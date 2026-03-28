@@ -18,7 +18,7 @@ Todo el código del juego vive aquí. No tocar Assets/Scenes, Assets/Settings ni
 
 ```
 Scripts/
-  Core/          ShapeFactory, GameManager, SaveManager, GameData
+  Core/          ShapeFactory, GameManager, SaveManager, GameData, LocalizationManager
   Events/        GameEvents.cs — eventos globales estáticos
   Maze/          MazeGenerator, MazeData, CellType, MazeRenderer
                  Editor/MazeDebugVisualizerEditor.cs
@@ -26,7 +26,7 @@ Scripts/
   Enemies/       EnemyController, PatrolEnemy, TrailEnemy  ← pendiente Sistema 3.5
   Movement/      PlayerMovement
   Camera/        CameraFollow
-  UI/            HUDController, PauseMapController
+  UI/            HUDController, PauseMapController, GameResultController, LocalizedText
   Level/         LevelManager, LevelData (ScriptableObject), LevelLoader, LevelTimer
   Monetization/  AdManager, IAPManager
   Audio/         AudioManager
@@ -57,7 +57,8 @@ FX/Particles/
 | 6 | Monetización | ✅ Completo | IAPManager (Unity IAP v5) + AdManager (AdMob) |
 | 7 | Juice y sonido | ✅ Completo | AudioManager, playlists aleatorias, SFX por eventos |
 | S | SaveManager | ✅ Completo | GameData JSON, LevelRecord, AudioSettings, GameStats |
-| 8 | UI completa | ⬜ Pendiente | Boot + Menu + LevelSelect (panel) + GameOver + LevelComplete |
+| L | Localización | ✅ Completo | EN, ES, PT, FR, DE — auto-detect + guardado en SaveManager |
+| 8 | UI completa | ✅ Completo | Boot + Menu + LevelSelect + GameResult + Localización |
 | 3.5 | Enemigos | ⬜ Pendiente (al final) | Ver sección Enemigos |
 
 ## Generación de maze — MazeStyle
@@ -212,6 +213,89 @@ Canvas (Canvas, CanvasScaler, GraphicRaycaster, HUDController, PauseMapControlle
       └── ResumeButton       (Button — _resumeButton)
 ```
 
+## Localización — Sistema L
+
+### Arquitectura
+
+- **`LocalizationManager`** — clase estática en `Shrink.Core`. No requiere GameObject. Llamar `Init()` desde `GameBootstrap` tras inicializar `SaveManager`.
+- **`LocalizedText`** — componente `[RequireComponent(TMP_Text)]` en `Shrink.UI`. Adjuntar a cualquier TextMeshProUGUI con una `_key` asignada en Inspector. Se suscribe a `GameEvents.OnLanguageChanged` y actualiza automáticamente.
+
+### Idiomas soportados
+
+| Código | Idioma | Auto-detect (SystemLanguage) |
+|--------|--------|------------------------------|
+| `en` | English (default) | Cualquier otro |
+| `es` | Español | `SystemLanguage.Spanish` |
+| `pt` | Português | `SystemLanguage.Portuguese` |
+| `fr` | Français | `SystemLanguage.French` |
+| `de` | Deutsch | `SystemLanguage.German` |
+
+### API pública
+
+```csharp
+LocalizationManager.Init();                    // Llamar desde GameBootstrap
+LocalizationManager.SetLanguage("fr");         // Cambia idioma y guarda en SaveManager
+LocalizationManager.CycleNext();               // Cicla al siguiente idioma
+LocalizationManager.Get("play");               // Devuelve texto en idioma activo
+LocalizationManager.CurrentLanguageName;       // "FRANÇAIS", "ESPAÑOL", etc.
+```
+
+### Claves disponibles
+
+| Clave | Descripción |
+|-------|-------------|
+| `back`, `play`, `settings`, `store` | Navegación principal |
+| `sfx`, `music`, `movement`, `language` | Settings |
+| `move_slide`, `move_cont`, `move_step` | Modos de movimiento |
+| `noad_name`, `noad_desc`, `full_name`, `full_desc` | Tienda IAP |
+| `buy`, `owned`, `restore` | Acciones tienda |
+| `gameover`, `victory`, `retry`, `watch_ad`, `menu`, `next`, `cont_btn` | Pantallas resultado |
+| `resume`, `add_size`, `add_time` | Pausa |
+
+### Persistencia
+
+- El idioma se guarda en `GameData.settings.language` (string código).
+- Al init, si no hay preferencia guardada se auto-detecta desde `Application.systemLanguage`.
+- `SaveManager.SaveLanguage(string code)` — método requerido en SaveManager.
+
+### Evento
+
+```csharp
+GameEvents.OnLanguageChanged   // Action — emitido por LocalizationManager.SetLanguage()
+GameEvents.RaiseLanguageChanged()
+```
+
+## GameResultController — Sistema 8 (parcial)
+
+Controla los paneles de victoria y game over en GameScene. Script en `Shrink.UI`.
+
+- **Inicialización**: `Initialize(ShrinkMechanic shrink)` — llamar desde `LevelLoader` al cargar nivel.
+- **Victory panel**: muestra 3 estrellas (Image coloreadas), botones Siguiente y Menú.
+- **Game Over panel**: botones Reintentar, Ver Anuncio (rewarded) y Menú.
+- **Ready panel**: se muestra tras ver el anuncio rewarded — confirma el bonus y tiene botón CONTINUAR.
+- `_continueBonus = 0.30f` — masa que se añade al continuar tras anuncio.
+- Usa `_forcesPause = true` + `Update` para mantener `Time.timeScale = 0` mientras los paneles están activos (evita el reset de AdMob).
+- El callback de AdMob llega en hilo secundario — usa flag `_applyRewardNextFrame` para diferir al hilo principal.
+
+### Jerarquía sugerida (GameScene Canvas)
+
+```
+Canvas
+  ├── HUDView           (HUDController)
+  ├── PauseView         (PauseMapController)
+  ├── VictoryPanel      (GameResultController._victoryPanel)
+  │   ├── Stars[]       (3× Image — _victoryStars)
+  │   ├── NextButton
+  │   └── MenuButton
+  ├── GameOverPanel     (GameResultController._gameOverPanel)
+  │   ├── RetryButton
+  │   ├── WatchAdButton
+  │   └── MenuButton
+  └── ReadyPanel        (GameResultController._readyPanel)
+      ├── BonusText     (TMP — _bonusText)
+      └── ContinueButton
+```
+
 ## Convenciones de código
 
 - Lenguaje: C# exclusivamente
@@ -222,6 +306,8 @@ Canvas (Canvas, CanvasScaler, GraphicRaycaster, HUDController, PauseMapControlle
   - `OnLevelComplete`, `OnLevelFail`, `OnDoorOpened`
   - `OnSizeChanged`, `OnMigajaAbsorbed`, `OnNarrowPassageBlocked`
   - `OnStarCollected(int collected, int total)`
+  - `OnTimerTick(float remaining)`, `OnTrapActivated(Vector2Int cell, CellType type)`
+  - `OnLanguageChanged` — emitido por `LocalizationManager.SetLanguage()`
 - Namespaces: `Shrink.Core`, `Shrink.Maze`, `Shrink.Player`, `Shrink.Enemies`, etc.
 - Un archivo = una clase (sin excepciones)
 - Nombres de archivo en PascalCase, exactamente igual al nombre de la clase

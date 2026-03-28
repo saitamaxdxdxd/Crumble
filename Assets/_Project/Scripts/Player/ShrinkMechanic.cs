@@ -58,6 +58,9 @@ namespace Shrink.Player
         /// <summary>Añade tamaño al jugador (recompensa por anuncio).</summary>
         public void AddSize(float amount) => _sphere.ApplyDelta(amount);
 
+        /// <summary>Revive al jugador para continuar tras ver un anuncio.</summary>
+        public void Revive() => _sphere.Revive();
+
         /// <summary>
         /// Procesa los efectos de tamaño al entrar en <paramref name="cell"/>.
         /// Devuelve false si la celda está bloqueada para el tamaño actual.

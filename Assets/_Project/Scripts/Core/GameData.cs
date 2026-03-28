@@ -60,5 +60,8 @@ namespace Shrink.Core
     {
         /// <summary>Modo de movimiento preferido (mapeado a PlayerMovement.MovementMode).</summary>
         public int movementMode = 1; // 1 = SlideToWall
+
+        /// <summary>Código de idioma ("en", "es", "pt", "fr"). Vacío = auto-detectar.</summary>
+        public string language = "";
     }
 }

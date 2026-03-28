@@ -24,6 +24,7 @@ namespace Shrink.Level
         [Header("UI")]
         [SerializeField] private HUDController      _hud;
         [SerializeField] private PauseMapController  _pauseMap;
+        [SerializeField] private GameResultController _gameResult;
 
         [Header("Movimiento")]
         [SerializeField] private PlayerMovement.MovementMode movementMode          = PlayerMovement.MovementMode.SlideToWall;
@@ -169,8 +170,9 @@ namespace Shrink.Level
             }
 
             // ── UI ────────────────────────────────────────────────────────────
-            if (_pauseMap != null) _pauseMap.Initialize(_shrink, _timer);
-            if (_hud      != null) _hud.Initialize(_pauseMap, _renderer.TotalStars, _shrink, levelData.HasTimer);
+            if (_pauseMap   != null) _pauseMap.Initialize(_shrink, _timer);
+            if (_hud        != null) _hud.Initialize(_pauseMap, _renderer.TotalStars, _shrink, levelData.HasTimer);
+            if (_gameResult != null) _gameResult.Initialize(_shrink);
 
             Debug.Log($"[LevelLoader] Nivel {levelData.LevelNumber} cargado | seed={seed} | " +
                       $"{levelData.MazeWidth}×{levelData.MazeHeight} | style={levelData.Style}");

@@ -3,6 +3,7 @@ using Shrink.Monetization;
 using Shrink.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Shrink.UI
@@ -21,6 +22,7 @@ namespace Shrink.UI
         [Header("Panel")]
         [SerializeField] private GameObject _mapPanel;
         [SerializeField] private Button     _resumeButton;
+        [SerializeField] private Button     _menuButton;
 
         [Header("Botones de recompensa")]
         [SerializeField] private Button _addSizeButton;
@@ -64,6 +66,9 @@ namespace Shrink.UI
             if (_resumeButton != null)
                 _resumeButton.onClick.AddListener(Close);
 
+            if (_menuButton != null)
+                _menuButton.onClick.AddListener(OnMenuPressed);
+
             if (_addSizeButton != null)
                 _addSizeButton.onClick.AddListener(OnAddSizePressed);
 
@@ -99,6 +104,12 @@ namespace Shrink.UI
         // API pública
         // ──────────────────────────────────────────────────────────────────────
 
+        private void OnMenuPressed()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene("MenuScene");
+        }
+
         public void Toggle() => SetPaused(!IsPaused);
         public void Open()   => SetPaused(true);
         public void Close()  => SetPaused(false);
@@ -125,7 +136,7 @@ namespace Shrink.UI
             _pendingSizeReward = true;
             _pendingTimeReward = false;
             Close();
-            AdManager.Instance.ShowRewarded(() =>
+            AdManager.Instance.ShowRewarded(onUnavailable: () =>
             {
                 // Anuncio no disponible — reabrir pausa
                 _pendingSizeReward = false;
@@ -139,7 +150,7 @@ namespace Shrink.UI
             _pendingTimeReward = true;
             _pendingSizeReward = false;
             Close();
-            AdManager.Instance.ShowRewarded(() =>
+            AdManager.Instance.ShowRewarded(onUnavailable: () =>
             {
                 _pendingTimeReward = false;
                 Open();

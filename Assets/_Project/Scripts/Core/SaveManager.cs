@@ -132,6 +132,13 @@ namespace Shrink.Core
             Save();
         }
 
+        /// <summary>Guarda el código de idioma preferido.</summary>
+        public void SaveLanguage(string langCode)
+        {
+            Data.settings.language = langCode;
+            Save();
+        }
+
         /// <summary>Borra el archivo de guardado y reinicia los datos (testing).</summary>
         public void DeleteSave()
         {

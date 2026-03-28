@@ -68,6 +68,17 @@ namespace Shrink.Player
         public void SetCell(Vector2Int cell) => CurrentCell = cell;
 
         /// <summary>
+        /// Revive al jugador tras ver un anuncio de recompensa.
+        /// Restaura IsAlive y refresca el visual con el tamaño actual.
+        /// </summary>
+        public void Revive()
+        {
+            IsAlive = true;
+            GameEvents.RaiseSizeChanged(CurrentSize);
+            RefreshVisual();
+        }
+
+        /// <summary>
         /// Aplica un delta de tamaño (positivo = crecer, negativo = encoger).
         /// </summary>
         public void ApplyDelta(float delta)

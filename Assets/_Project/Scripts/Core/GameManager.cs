@@ -112,6 +112,9 @@ namespace Shrink.Core
             LoadCurrentLevel();
         }
 
+        /// <summary>Reanuda el juego tras continuar con anuncio de recompensa.</summary>
+        public void ResumeAfterContinue() => State = GameState.Playing;
+
         public void GoToNextLevel()
         {
             var lm = LevelManager.Instance;
