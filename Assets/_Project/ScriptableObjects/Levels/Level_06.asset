@@ -17,13 +17,48 @@ MonoBehaviour:
   mazeHeight: 15
   mazeStyle: 0
   seed: 6
-  difficultyFactor: 0.8
+  difficultyFactor: 0.7522
   doorCount: 0
   narrow06Count: 0
   narrow04Count: 1
   trapOneshotCount: 1
   trapDrainCount: 1
+  spikeCount: 0
   starCount: 3
   starSizeBonus: 0.05
+  patrolEnemyCount: 0
+  trailEnemyCount: 0
   hasTimer: 1
-  timeLimit: 30
+  timeLimit: 45
+  manualOverrides:
+  - cell: {x: 15, y: 8}
+    type: 1
+  - cell: {x: 14, y: 8}
+    type: 1
+  - cell: {x: 13, y: 8}
+    type: 1
+  - cell: {x: 12, y: 8}
+    type: 8
+  - cell: {x: 11, y: 8}
+    type: 1
+  - cell: {x: 10, y: 8}
+    type: 8
+  - cell: {x: 3, y: 3}
+    type: 0
+  - cell: {x: 4, y: 3}
+    type: 0
+  - cell: {x: 5, y: 3}
+    type: 0
+  - cell: {x: 6, y: 3}
+    type: 0
+  - cell: {x: 7, y: 3}
+    type: 0
+  - cell: {x: 8, y: 3}
+    type: 0
+  - cell: {x: 5, y: 2}
+    type: 9
+  manualStarCells:
+  - {x: 4, y: 8}
+  - {x: 11, y: 8}
+  - {x: 5, y: 2}
+  manualEnemySpawns: []

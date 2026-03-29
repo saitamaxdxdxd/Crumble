@@ -23,7 +23,44 @@ MonoBehaviour:
   narrow04Count: 0
   trapOneshotCount: 1
   trapDrainCount: 1
+  spikeCount: 0
   starCount: 3
   starSizeBonus: 0.05
+  patrolEnemyCount: 0
+  trailEnemyCount: 0
   hasTimer: 1
   timeLimit: 35
+  manualOverrides:
+  - cell: {x: 9, y: 13}
+    type: 1
+  - cell: {x: 15, y: 10}
+    type: 1
+  - cell: {x: 14, y: 10}
+    type: 1
+  - cell: {x: 13, y: 10}
+    type: 1
+  - cell: {x: 12, y: 10}
+    type: 1
+  - cell: {x: 11, y: 10}
+    type: 1
+  - cell: {x: 10, y: 10}
+    type: 1
+  - cell: {x: 8, y: 10}
+    type: 1
+  - cell: {x: 7, y: 10}
+    type: 1
+  - cell: {x: 6, y: 10}
+    type: 1
+  - cell: {x: 5, y: 10}
+    type: 8
+  manualStarCells:
+  - {x: 7, y: 18}
+  - {x: 2, y: 2}
+  - {x: 9, y: 10}
+  manualEnemySpawns:
+  - cell: {x: 7, y: 17}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 9, y: 16}
+    type: 0
+    patrolDir: {x: 1, y: 0}

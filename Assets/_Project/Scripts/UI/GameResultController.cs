@@ -24,6 +24,7 @@ namespace Shrink.UI
         [SerializeField] private GameObject _victoryPanel;
         [SerializeField] private Image[]    _victoryStars;   // 3 imágenes de estrella
         [SerializeField] private Button     _nextButton;
+        [SerializeField] private Button     _victoryRetryButton;
         [SerializeField] private Button     _victoryMenuButton;
 
         [Header("Colores de estrella (Victory)")]
@@ -87,8 +88,9 @@ namespace Shrink.UI
 
         private void Awake()
         {
-            if (_nextButton         != null) _nextButton.onClick.AddListener(OnNextPressed);
-            if (_victoryMenuButton  != null) _victoryMenuButton.onClick.AddListener(OnMenuPressed);
+            if (_nextButton          != null) _nextButton.onClick.AddListener(OnNextPressed);
+            if (_victoryRetryButton  != null) _victoryRetryButton.onClick.AddListener(OnRetryPressed);
+            if (_victoryMenuButton   != null) _victoryMenuButton.onClick.AddListener(OnMenuPressed);
             if (_retryButton        != null) _retryButton.onClick.AddListener(OnRetryPressed);
             if (_watchAdButton      != null) _watchAdButton.onClick.AddListener(OnWatchAdPressed);
             if (_gameOverMenuButton != null) _gameOverMenuButton.onClick.AddListener(OnMenuPressed);
@@ -132,7 +134,6 @@ namespace Shrink.UI
         {
             _forcesPause = true;
             ShowVictoryPanel(_currentStars);
-            AdManager.Instance?.TryShowInterstitial();
         }
 
         private void HandleLevelFail()

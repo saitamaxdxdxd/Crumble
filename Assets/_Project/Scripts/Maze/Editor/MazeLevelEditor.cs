@@ -3,6 +3,7 @@ using Shrink.Level;
 using Shrink.Maze;
 using UnityEditor;
 using UnityEngine;
+using EnemyType = Shrink.Level.EnemyType;
 
 namespace Shrink.Maze.Editor
 {
@@ -29,12 +30,14 @@ namespace Shrink.Maze.Editor
         private bool                _showPath = true;
         private readonly HashSet<Vector2Int> _pathSet = new();
 
-        private enum PaintMode { Star, TrapDrain, TrapOneshot, Spike, Door, Narrow06, Narrow04, OpenPath, CloseWall, Erase }
+        private enum PaintMode { Star, TrapDrain, TrapOneshot, Spike, Door, Narrow06, Narrow04, OpenPath, CloseWall, PatrolH, PatrolV, TrailEnemy, Erase }
 
         // ──────────────────────────────────────────────────────────────────────
         // Colores (coinciden con MazeRenderer)
         // ──────────────────────────────────────────────────────────────────────
 
+        private static readonly Color ColPatrol      = new Color(1.00f, 0.30f, 0.10f);
+        private static readonly Color ColTrail       = new Color(0.80f, 0.10f, 0.80f);
         private static readonly Color ColPath        = new Color(0.40f, 0.80f, 1.00f, 0.35f);
         private static readonly Color ColSpike       = new Color(0.90f, 0.05f, 0.05f);
         private static readonly Color ColOpenPath    = new Color(0.50f, 1.00f, 0.50f);
@@ -103,6 +106,11 @@ namespace Shrink.Maze.Editor
                 if (EditorUtility.DisplayDialog("Confirmar", "¿Borrar todos los overrides de estrella?", "Sí", "Cancelar"))
                     ClearProperty("manualStarCells");
             }
+            if (GUILayout.Button("✕ Borrar enemy spawns", GUILayout.Height(28)))
+            {
+                if (EditorUtility.DisplayDialog("Confirmar", "¿Borrar todos los spawns de enemigos?", "Sí", "Cancelar"))
+                    ClearProperty("manualEnemySpawns");
+            }
             EditorGUILayout.EndHorizontal();
 
             if (_preview == null)
@@ -122,15 +130,19 @@ namespace Shrink.Maze.Editor
             PaintButton(PaintMode.Door,        "Puerta",       ColDoor);
             PaintButton(PaintMode.Narrow06,    "Narrow 0.6",   ColNarrow06);
             PaintButton(PaintMode.Narrow04,    "Narrow 0.4",   ColNarrow04);
-            PaintButton(PaintMode.OpenPath,    "⬜ Abrir paso", ColOpenPath);
-            PaintButton(PaintMode.CloseWall,   "⬛ Cerrar paso",ColCloseWall);
-            PaintButton(PaintMode.Erase,       "✕ Borrar",     new Color(0.5f, 0.5f, 0.5f));
+            PaintButton(PaintMode.OpenPath,    "⬜ Abrir paso",   ColOpenPath);
+            PaintButton(PaintMode.CloseWall,   "⬛ Cerrar paso",  ColCloseWall);
+            PaintButton(PaintMode.PatrolH,     "→ Patrulla H",   ColPatrol);
+            PaintButton(PaintMode.PatrolV,     "↑ Patrulla V",   ColPatrol * 0.75f);
+            PaintButton(PaintMode.TrailEnemy,  "◎ Rastreador",   ColTrail);
+            PaintButton(PaintMode.Erase,       "✕ Borrar",       new Color(0.5f, 0.5f, 0.5f));
             EditorGUILayout.EndHorizontal();
 
             // ── Stats de dificultad ───────────────────────────────────────────
             _serialized.Update();
             int   nCell       = _serialized.FindProperty("manualOverrides").arraySize;
             int   nStar       = _serialized.FindProperty("manualStarCells").arraySize;
+            int   nEnemies    = _serialized.FindProperty("manualEnemySpawns").arraySize;
             float difficulty  = _levelData.DifficultyFactor;
             float sizePerStep = _preview.RecommendedSizePerStep(difficulty);
             float minDrain    = sizePerStep * _preview.ShortestPathLength;
@@ -142,7 +154,7 @@ namespace Shrink.Maze.Editor
 
             // Fila 1 — info maze
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"Maze {_preview.Width}×{_preview.Height}  |  Semilla {_preview.Seed}  |  Overrides: {nCell}  |  Stars: {nStar}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Maze {_preview.Width}×{_preview.Height}  |  Semilla {_preview.Seed}  |  Overrides: {nCell}  |  Stars: {nStar}  |  Enemies: {nEnemies}", EditorStyles.miniLabel);
             _showPath = EditorGUILayout.ToggleLeft("Mostrar camino óptimo", _showPath, GUILayout.Width(160));
             EditorGUILayout.EndHorizontal();
 
@@ -224,6 +236,7 @@ namespace Shrink.Maze.Editor
             _serialized.Update();
             var overrideMap = BuildOverrideMap();
             var starSet     = BuildStarSet();
+            var enemySpawns = BuildEnemySpawnMap();
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.ExpandHeight(true));
             Rect grid = GUILayoutUtility.GetRect(gridW, gridH, GUILayout.Width(gridW), GUILayout.Height(gridH));
@@ -251,6 +264,14 @@ namespace Shrink.Maze.Editor
                     {
                         float m = _cellPx * 0.28f;
                         EditorGUI.DrawRect(new Rect(px + m, py + m, _cellPx - m * 2 - 1, _cellPx - m * 2 - 1), ColStar);
+                    }
+
+                    // Spawn de enemigo (círculo de color)
+                    if (enemySpawns.TryGetValue(cell, out EnemyType et))
+                    {
+                        float m  = _cellPx * 0.20f;
+                        Color ec = et == EnemyType.Trail ? ColTrail : ColPatrol;
+                        EditorGUI.DrawRect(new Rect(px + m, py + m, _cellPx - m * 2 - 1, _cellPx - m * 2 - 1), ec * 0.85f);
                     }
 
                     // Borde superior blanco si tiene override de celda
@@ -292,10 +313,16 @@ namespace Shrink.Maze.Editor
             // Siempre proteger START y EXIT
             if (effectiveCt == CellType.START || effectiveCt == CellType.EXIT) return;
 
+            // Modos de enemigo: solo sobre celdas walkables (no WALL)
+            bool isEnemyMode = _paintMode == PaintMode.PatrolH ||
+                               _paintMode == PaintMode.PatrolV  ||
+                               _paintMode == PaintMode.TrailEnemy;
+
             // OpenPath solo aplica sobre WALLs efectivas; el resto solo sobre celdas no-WALL efectivas
             if (_paintMode == PaintMode.OpenPath  && effectiveCt != CellType.WALL) return;
-            if (_paintMode != PaintMode.OpenPath  &&
-                _paintMode != PaintMode.Erase     && effectiveCt == CellType.WALL) return;
+            if (!isEnemyMode && _paintMode != PaintMode.OpenPath &&
+                _paintMode != PaintMode.Erase && effectiveCt == CellType.WALL) return;
+            if (isEnemyMode && effectiveCt == CellType.WALL) return;
 
             _serialized.Update();
 
@@ -304,9 +331,19 @@ namespace Shrink.Maze.Editor
                 case PaintMode.Erase:
                     RemoveFromCells(cell);
                     RemoveFromStars(cell);
+                    RemoveFromEnemies(cell);
                     break;
                 case PaintMode.Star:
                     ToggleStar(cell);
+                    break;
+                case PaintMode.PatrolH:
+                    SetEnemySpawn(cell, EnemyType.Patrol, Vector2Int.right);
+                    break;
+                case PaintMode.PatrolV:
+                    SetEnemySpawn(cell, EnemyType.Patrol, Vector2Int.up);
+                    break;
+                case PaintMode.TrailEnemy:
+                    SetEnemySpawn(cell, EnemyType.Trail, Vector2Int.zero);
                     break;
                 default:
                     SetCellOverride(cell, PaintModeToCellType(_paintMode));
@@ -484,6 +521,55 @@ namespace Shrink.Maze.Editor
             for (int i = 0; i < prop.arraySize; i++)
                 set.Add(prop.GetArrayElementAtIndex(i).vector2IntValue);
             return set;
+        }
+
+        private void SetEnemySpawn(Vector2Int cell, EnemyType type, Vector2Int dir)
+        {
+            var prop = _serialized.FindProperty("manualEnemySpawns");
+
+            // Actualizar si ya existe en esa celda
+            for (int i = 0; i < prop.arraySize; i++)
+            {
+                var elem = prop.GetArrayElementAtIndex(i);
+                if (elem.FindPropertyRelative("cell").vector2IntValue == cell)
+                {
+                    elem.FindPropertyRelative("type").intValue           = (int)type;
+                    elem.FindPropertyRelative("patrolDir").vector2IntValue = dir;
+                    return;
+                }
+            }
+
+            prop.InsertArrayElementAtIndex(prop.arraySize);
+            var newElem = prop.GetArrayElementAtIndex(prop.arraySize - 1);
+            newElem.FindPropertyRelative("cell").vector2IntValue       = cell;
+            newElem.FindPropertyRelative("type").intValue              = (int)type;
+            newElem.FindPropertyRelative("patrolDir").vector2IntValue  = dir;
+        }
+
+        private void RemoveFromEnemies(Vector2Int cell)
+        {
+            var prop = _serialized.FindProperty("manualEnemySpawns");
+            for (int i = 0; i < prop.arraySize; i++)
+            {
+                if (prop.GetArrayElementAtIndex(i).FindPropertyRelative("cell").vector2IntValue == cell)
+                {
+                    prop.DeleteArrayElementAtIndex(i);
+                    return;
+                }
+            }
+        }
+
+        private Dictionary<Vector2Int, EnemyType> BuildEnemySpawnMap()
+        {
+            var map  = new Dictionary<Vector2Int, EnemyType>();
+            var prop = _serialized.FindProperty("manualEnemySpawns");
+            for (int i = 0; i < prop.arraySize; i++)
+            {
+                var elem = prop.GetArrayElementAtIndex(i);
+                map[elem.FindPropertyRelative("cell").vector2IntValue] =
+                    (EnemyType)elem.FindPropertyRelative("type").intValue;
+            }
+            return map;
         }
 
         private void PaintButton(PaintMode mode, string label, Color color)

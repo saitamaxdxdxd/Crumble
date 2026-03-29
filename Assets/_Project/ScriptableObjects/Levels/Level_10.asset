@@ -17,13 +17,66 @@ MonoBehaviour:
   mazeHeight: 15
   mazeStyle: 1
   seed: 1
-  difficultyFactor: 0.8
+  difficultyFactor: 0.83
   doorCount: 0
   narrow06Count: 1
   narrow04Count: 0
   trapOneshotCount: 1
   trapDrainCount: 1
+  spikeCount: 0
   starCount: 3
   starSizeBonus: 0.05
+  patrolEnemyCount: 0
+  trailEnemyCount: 0
   hasTimer: 1
-  timeLimit: 35
+  timeLimit: 50
+  manualOverrides:
+  - cell: {x: 6, y: 1}
+    type: 1
+  - cell: {x: 12, y: 11}
+    type: 9
+  - cell: {x: 3, y: 10}
+    type: 10
+  - cell: {x: 5, y: 10}
+    type: 10
+  - cell: {x: 6, y: 7}
+    type: 1
+  - cell: {x: 5, y: 8}
+    type: 11
+  - cell: {x: 11, y: 12}
+    type: 10
+  - cell: {x: 9, y: 12}
+    type: 9
+  - cell: {x: 9, y: 11}
+    type: 1
+  - cell: {x: 8, y: 11}
+    type: 1
+  - cell: {x: 8, y: 13}
+    type: 10
+  - cell: {x: 5, y: 6}
+    type: 1
+  - cell: {x: 5, y: 5}
+    type: 10
+  - cell: {x: 4, y: 4}
+    type: 10
+  - cell: {x: 5, y: 4}
+    type: 10
+  - cell: {x: 2, y: 4}
+    type: 10
+  manualStarCells:
+  - {x: 1, y: 13}
+  - {x: 5, y: 5}
+  - {x: 13, y: 13}
+  manualEnemySpawns:
+  - cell: {x: 4, y: 9}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 5, y: 1}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 7, y: 6}
+    type: 0
+    patrolDir: {x: 0, y: 1}
+  - cell: {x: 2, y: 4}
+    type: 0
+    patrolDir: {x: 1, y: 0}

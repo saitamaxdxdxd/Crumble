@@ -42,6 +42,12 @@ namespace Shrink.Maze
         /// <summary>Migajas activas indexadas por celda.</summary>
         public Dictionary<Vector2Int, Crumb> Crumbs { get; } = new();
 
+        /// <summary>
+        /// Orden de depósito de migajas — la más reciente al final.
+        /// Usado por TrailEnemy para saber cuál perseguir.
+        /// </summary>
+        public List<Vector2Int> CrumbOrder { get; } = new();
+
         /// <summary>Estrellas del nivel indexadas por celda.</summary>
         public Dictionary<Vector2Int, Star> Stars { get; } = new();
 
@@ -301,6 +307,7 @@ namespace Shrink.Maze
             var crumb = go.AddComponent<Crumb>();
             crumb.Initialize(cell, sizeStored);
             Crumbs[cell] = crumb;
+            CrumbOrder.Add(cell);
         }
 
         /// <summary>
@@ -313,8 +320,21 @@ namespace Shrink.Maze
 
             float stored = crumb.SizeStored;
             Crumbs.Remove(cell);
+            CrumbOrder.Remove(cell);
             Destroy(crumb.gameObject);
             return stored;
+        }
+
+        /// <summary>
+        /// Devora la migaja de la celda indicada sin devolver masa al jugador.
+        /// Usado por TrailEnemy.
+        /// </summary>
+        public void DevourCrumb(Vector2Int cell)
+        {
+            if (!Crumbs.TryGetValue(cell, out Crumb crumb)) return;
+            Crumbs.Remove(cell);
+            CrumbOrder.Remove(cell);
+            Destroy(crumb.gameObject);
         }
 
         /// <summary>
@@ -329,10 +349,12 @@ namespace Shrink.Maze
             Destroy(tile);
             Data.Grid[cell.x, cell.y] = CellType.WALL;
 
-            // Destruir también el tile de suelo (overlay naranja)
-            // Buscamos por nombre ya que no lo tenemos indexado por separado
+            // Destruir overlay naranja y suelo base (de lo contrario el suelo blanco queda visible)
             var floorTile = _floorParent.Find($"TO{cell.x}_{cell.y}");
             if (floorTile != null) Destroy(floorTile.gameObject);
+
+            var baseTile = _floorParent.Find($"F{cell.x}_{cell.y}");
+            if (baseTile != null) Destroy(baseTile.gameObject);
 
             // Crear tile de muro en su lugar
             CreateTile($"W{cell.x}_{cell.y}_trap", ShapeFactory.GetSquare(),
@@ -431,6 +453,7 @@ namespace Shrink.Maze
             if (_starParent  != null) Destroy(_starParent.gameObject);
             if (_trapParent  != null) Destroy(_trapParent.gameObject);
             Crumbs.Clear();
+            CrumbOrder.Clear();
             Stars.Clear();
             _trapTiles.Clear();
             CollectedStars = 0;

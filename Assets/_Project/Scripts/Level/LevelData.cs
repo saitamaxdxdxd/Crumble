@@ -42,13 +42,18 @@ namespace Shrink.Level
         [SerializeField] private int   starCount     = 3;
         [SerializeField] private float starSizeBonus = 0.05f;
 
+        [Header("Enemigos")]
+        [SerializeField] private int patrolEnemyCount = 0;
+        [SerializeField] private int trailEnemyCount  = 0;
+
         [Header("Timer")]
         [SerializeField] private bool  hasTimer  = false;
         [SerializeField] private float timeLimit = 120f;
 
         [Header("Overrides manuales (editor visual)")]
-        [SerializeField] private List<CellOverride> manualOverrides = new();
-        [SerializeField] private List<Vector2Int>   manualStarCells = new();
+        [SerializeField] private List<CellOverride> manualOverrides    = new();
+        [SerializeField] private List<Vector2Int>   manualStarCells    = new();
+        [SerializeField] private List<EnemySpawn>   manualEnemySpawns  = new();
 
         // ──────────────────────────────────────────────────────────────────────
         // Propiedades de solo lectura
@@ -87,6 +92,12 @@ namespace Shrink.Level
         /// <summary>Tamaño extra que otorga cada estrella.</summary>
         public float      StarSizeBonus    => starSizeBonus;
 
+        /// <summary>Número de PatrolEnemy a instanciar.</summary>
+        public int        PatrolEnemyCount => patrolEnemyCount;
+
+        /// <summary>Número de TrailEnemy a instanciar.</summary>
+        public int        TrailEnemyCount  => trailEnemyCount;
+
         /// <summary>True si el nivel tiene límite de tiempo.</summary>
         public bool       HasTimer         => hasTimer;
 
@@ -100,6 +111,12 @@ namespace Shrink.Level
         /// Posiciones manuales de estrellas. Si la lista tiene elementos, reemplaza
         /// completamente el algoritmo de colocación automática.
         /// </summary>
-        public List<Vector2Int>   ManualStarCells => manualStarCells;
+        public List<Vector2Int>   ManualStarCells   => manualStarCells;
+
+        /// <summary>
+        /// Spawns manuales de enemigos. Si tiene elementos, reemplaza completamente
+        /// el spawning aleatorio (ignora patrolEnemyCount y trailEnemyCount).
+        /// </summary>
+        public List<EnemySpawn>   ManualEnemySpawns => manualEnemySpawns;
     }
 }

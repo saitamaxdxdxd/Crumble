@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Shrink.Camera;
+using Shrink.Enemies;
 using Shrink.Maze;
 using Shrink.Movement;
 using Shrink.Player;
@@ -35,12 +37,13 @@ namespace Shrink.Level
         // Referencias runtime
         // ──────────────────────────────────────────────────────────────────────
 
-        private MazeRenderer     _renderer;
-        private SphereController _sphere;
-        private ShrinkMechanic   _shrink;
-        private PlayerMovement   _movement;
-        private CameraFollow     _cameraFollow;
-        private LevelTimer       _timer;
+        private MazeRenderer          _renderer;
+        private SphereController      _sphere;
+        private ShrinkMechanic        _shrink;
+        private PlayerMovement        _movement;
+        private CameraFollow          _cameraFollow;
+        private LevelTimer            _timer;
+        private List<EnemyController> _enemies = new();
 
         /// <summary>Renderer del maze activo. Null si no hay nivel cargado.</summary>
         public MazeRenderer     Renderer => _renderer;
@@ -93,6 +96,10 @@ namespace Shrink.Level
                 _shrink   = null;
                 _movement = null;
             }
+
+            foreach (var enemy in _enemies)
+                if (enemy != null) Destroy(enemy.gameObject);
+            _enemies.Clear();
         }
 
         // ──────────────────────────────────────────────────────────────────────
@@ -117,6 +124,120 @@ namespace Shrink.Level
 
                 mazeData.Grid[o.cell.x, o.cell.y] = o.type;
             }
+        }
+
+        private void SpawnEnemies(LevelData levelData, MazeData mazeData)
+        {
+            // ── Spawns manuales (del editor visual) — tienen prioridad ─────────
+            if (levelData.ManualEnemySpawns != null && levelData.ManualEnemySpawns.Count > 0)
+            {
+                for (int i = 0; i < levelData.ManualEnemySpawns.Count; i++)
+                {
+                    var spawn = levelData.ManualEnemySpawns[i];
+                    if (!mazeData.InBounds(spawn.cell.x, spawn.cell.y)) continue;
+
+                    if (spawn.type == EnemyType.Trail)
+                    {
+                        var go    = new GameObject($"TrailEnemy_{i}");
+                        var trail = go.AddComponent<TrailEnemy>();
+                        trail.Initialize(_renderer, _sphere, spawn.cell);
+                        _enemies.Add(trail);
+                    }
+                    else
+                    {
+                        Vector2Int dir = spawn.patrolDir == Vector2Int.zero ? Vector2Int.right : spawn.patrolDir;
+                        var go         = new GameObject($"PatrolEnemy_{i}");
+                        var patrol     = go.AddComponent<PatrolEnemy>();
+                        patrol.InitializePatrol(_renderer, _sphere, spawn.cell, dir);
+                        _enemies.Add(patrol);
+                    }
+                }
+                return;
+            }
+
+            // ── Spawns aleatorios basados en contadores ────────────────────────
+            if (levelData.PatrolEnemyCount == 0 && levelData.TrailEnemyCount == 0) return;
+
+            // Recolectar celdas walkables lejos del START (distancia Manhattan >= 5)
+            var candidates = new List<Vector2Int>();
+            for (int x = 0; x < mazeData.Width; x++)
+            {
+                for (int y = 0; y < mazeData.Height; y++)
+                {
+                    CellType ct = mazeData.Grid[x, y];
+                    if (ct == CellType.WALL || ct == CellType.START || ct == CellType.EXIT ||
+                        ct == CellType.NARROW_06 || ct == CellType.NARROW_04) continue;
+
+                    var cell = new Vector2Int(x, y);
+                    int dist = Mathf.Abs(x - mazeData.StartCell.x) + Mathf.Abs(y - mazeData.StartCell.y);
+                    if (dist >= 5) candidates.Add(cell);
+                }
+            }
+
+            if (candidates.Count == 0) return;
+
+            var rng  = new System.Random(mazeData.Seed + 77);
+            var used = new HashSet<Vector2Int>();
+
+            // ── PatrolEnemies ─────────────────────────────────────────────────
+            for (int i = 0; i < levelData.PatrolEnemyCount && candidates.Count > 0; i++)
+            {
+                Vector2Int cell = PickUnused(candidates, used, rng);
+                used.Add(cell);
+
+                var go      = new GameObject($"PatrolEnemy_{i}");
+                var patrol  = go.AddComponent<PatrolEnemy>();
+                Vector2Int dir = BestPatrolDir(mazeData, cell);
+                patrol.InitializePatrol(_renderer, _sphere, cell, dir);
+                _enemies.Add(patrol);
+            }
+
+            // ── TrailEnemies ──────────────────────────────────────────────────
+            for (int i = 0; i < levelData.TrailEnemyCount && candidates.Count > 0; i++)
+            {
+                Vector2Int cell = PickUnused(candidates, used, rng);
+                used.Add(cell);
+
+                var go    = new GameObject($"TrailEnemy_{i}");
+                var trail = go.AddComponent<TrailEnemy>();
+                trail.Initialize(_renderer, _sphere, cell);
+                _enemies.Add(trail);
+            }
+        }
+
+        /// <summary>Elige una celda aleatoria no usada de la lista de candidatos.</summary>
+        private static Vector2Int PickUnused(List<Vector2Int> candidates,
+                                              HashSet<Vector2Int> used, System.Random rng)
+        {
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                var cell = candidates[rng.Next(candidates.Count)];
+                if (!used.Contains(cell)) return cell;
+            }
+            return candidates[rng.Next(candidates.Count)];
+        }
+
+        /// <summary>
+        /// Determina la mejor dirección de patrulla: el eje con mayor extensión transitable.
+        /// </summary>
+        private static Vector2Int BestPatrolDir(MazeData data, Vector2Int cell)
+        {
+            Vector2Int[] dirs = { Vector2Int.right, Vector2Int.up };
+            int bestLen = -1;
+            Vector2Int bestDir = Vector2Int.right;
+
+            foreach (var d in dirs)
+            {
+                int len = 0;
+                var c   = cell + d;
+                while (data.InBounds(c.x, c.y) && data.Grid[c.x, c.y] != CellType.WALL)
+                {
+                    len++;
+                    c += d;
+                }
+                if (len > bestLen) { bestLen = len; bestDir = d; }
+            }
+            return bestDir;
         }
 
         private void EnsureCamera()
@@ -190,6 +311,9 @@ namespace Shrink.Level
                 _timer = timerGo.AddComponent<LevelTimer>();
                 _timer.Initialize(levelData.TimeLimit);
             }
+
+            // ── Enemigos ──────────────────────────────────────────────────────
+            SpawnEnemies(levelData, mazeData);
 
             // ── UI ────────────────────────────────────────────────────────────
             if (_pauseMap   != null) _pauseMap.Initialize(_shrink, _timer);

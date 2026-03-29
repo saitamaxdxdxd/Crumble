@@ -22,6 +22,7 @@ namespace Shrink.UI
         [Header("Panel")]
         [SerializeField] private GameObject _mapPanel;
         [SerializeField] private Button     _resumeButton;
+        [SerializeField] private Button     _retryButton;
         [SerializeField] private Button     _menuButton;
 
         [Header("Botones de recompensa")]
@@ -66,6 +67,9 @@ namespace Shrink.UI
             if (_resumeButton != null)
                 _resumeButton.onClick.AddListener(Close);
 
+            if (_retryButton != null)
+                _retryButton.onClick.AddListener(OnRetryPressed);
+
             if (_menuButton != null)
                 _menuButton.onClick.AddListener(OnMenuPressed);
 
@@ -103,6 +107,12 @@ namespace Shrink.UI
         // ──────────────────────────────────────────────────────────────────────
         // API pública
         // ──────────────────────────────────────────────────────────────────────
+
+        private void OnRetryPressed()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
 
         private void OnMenuPressed()
         {

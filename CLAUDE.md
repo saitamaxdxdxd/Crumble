@@ -21,13 +21,14 @@ Scripts/
   Core/          ShapeFactory, GameManager, SaveManager, GameData, LocalizationManager
   Events/        GameEvents.cs — eventos globales estáticos
   Maze/          MazeGenerator, MazeData, CellType, MazeRenderer
-                 Editor/MazeDebugVisualizerEditor.cs
+                 Editor/MazeLevelEditor.cs, Editor/MazeDebugVisualizerEditor.cs
   Player/        SphereController, ShrinkMechanic, Crumb, Star
-  Enemies/       EnemyController, PatrolEnemy, TrailEnemy  ← pendiente Sistema 3.5
+  Enemies/       EnemyController, PatrolEnemy, TrailEnemy
   Movement/      PlayerMovement
   Camera/        CameraFollow
   UI/            HUDController, PauseMapController, GameResultController, LocalizedText
-  Level/         LevelManager, LevelData (ScriptableObject), LevelLoader, LevelTimer
+  Level/         LevelManager, LevelData (ScriptableObject), LevelLoader, LevelTimer,
+                 CellOverride, EnemySpawn
   Monetization/  AdManager, IAPManager
   Audio/         AudioManager
 
@@ -51,16 +52,18 @@ FX/Particles/
 |---|---------|--------|-------|
 | 1 | Generación procedural de maze | ✅ Completo | BSP + Labyrinth + Hybrid |
 | 2 | Esfera y mecánica de desgaste | ✅ Completo | Migajas, puertas, estrellas, calibración auto |
-| 3 | Movimiento por swipe + cámara | ✅ Completo | SlideToWall + ContinuousSlide + StepByStep |
-| 4 | Pausa + HUD | ✅ Completo | HUDController + PauseMapController (sin mapa) |
-| 5 | Sistema de niveles y semillas | ✅ Completo | LevelData, LevelManager, LevelLoader, LevelTimer, Trampas |
+| 3 | Movimiento — joystick flotante | ✅ Completo | Floating joystick invisible, re-anclaje dinámico, velocidad inversamente proporcional al tamaño |
+| 3.5 | Enemigos / Mobs | ✅ Completo | PatrolEnemy, TrailEnemy, spawns manuales en editor |
+| 4 | Pausa + HUD | ✅ Completo | HUDController + PauseMapController (Continuar, Retry, Menú, recompensas) |
+| 5 | Sistema de niveles y semillas | ✅ Completo | LevelData, LevelManager, LevelLoader, LevelTimer, Trampas, Picos |
 | 6 | Monetización | ✅ Completo | IAPManager (Unity IAP v5) + AdManager (AdMob) |
 | 7 | Juice y sonido | ✅ Completo | AudioManager, playlists aleatorias, SFX por eventos |
 | S | SaveManager | ✅ Completo | GameData JSON, LevelRecord, AudioSettings, GameStats |
 | L | Localización | ✅ Completo | EN, ES, PT, FR, DE — auto-detect + guardado en SaveManager |
 | 8 | UI completa | ✅ Completo | Boot + Menu + LevelSelect + GameResult + Localización |
-| 3.5 | Enemigos | ⬜ Pendiente (al final) | Ver sección Enemigos |
-| E | Editor visual de niveles | ⬜ Pendiente | Ver sección Editor Visual |
+| E | Editor visual de niveles | ✅ Completo | Ver sección Editor Visual |
+| 9 | Modo Infinito | ⬜ Pendiente | Tras completar los 30 niveles — ver sección Modo Infinito |
+| F | Mecánicas futuras | ⬜ Backlog | Enemigos adicionales, trampas avanzadas, celdas especiales — ver sección Backlog |
 
 ## Generación de maze — MazeStyle
 
@@ -68,31 +71,41 @@ FX/Particles/
 public enum MazeStyle { Dungeon, Labyrinth, Hybrid }
 ```
 
-1. EstiloAlgoritmoUsar paraDungeonBSP (cuartos + corredores)Niveles 1–9LabyrinthRecursive Backtracker DFSNiveles 10–30HybridBacktracker + cuartos talladosAlternativa con zonas abiertas
+| Estilo | Algoritmo | Usar para |
+|--------|-----------|-----------|
+| Dungeon | BSP (cuartos + corredores) | Niveles 1–9 |
+| Labyrinth | Recursive Backtracker DFS | Niveles 10–30 y Modo Infinito |
+| Hybrid | Backtracker + cuartos tallados | Alternativa con zonas abiertas |
 
-- **Labyrinth es el modo recomendado** para gameplay real — el Smart Slide funciona mejor con corredores de 1 celda de ancho.
-- BSP genera cuartos grandes donde el Smart Slide se degrada a step-by-step.
+- **Labyrinth es el modo recomendado** para gameplay real — corredores de 1 celda de ancho.
+- BSP genera cuartos grandes donde el joystick se degrada.
 - El maze siempre se valida con BFS antes de devolverse. `ShortestPathLength` queda en `MazeData`.
 
 ## Movimiento — PlayerMovement
 
-Tres modos seleccionables desde `LevelLoader` en el Inspector:
+Un solo modo: **joystick flotante invisible**. No hay modos seleccionables.
 
-| Modo | Comportamiento | Uso |
-|------|---------------|-----|
-| `SlideToWall` | Smart Slide: para en pared, NARROW e intersecciones | Producción (default) |
-| `ContinuousSlide` | Para solo en pared/NARROW; nuevo swipe redirige en el próximo paso | Alternativa a probar |
-| `StepByStep` | Una celda por input | Testing con teclado |
+**Comportamiento:**
+- Toca en cualquier punto de la pantalla y arrastra → dirección registrada al superar el deadzone
+- Mantener el dedo = la esfera sigue moviéndose. Soltar = para al terminar la celda actual
+- Cambiar dirección mientras el dedo está abajo redirige en la próxima celda
+- El origen del joystick se re-ancla cada vez que se registra una nueva dirección
 
-**Configuración en LevelLoader** (sección Movimiento en Inspector):
-- `Move Time` — segundos por celda para SlideToWall/StepByStep (default `0.10`)
-- `Continuous Move Time` — segundos por celda para ContinuousSlide (default `0.18`)
-- `Swipe Min Dist` — píxeles mínimos para reconocer swipe (default `40`)
+**Velocidad dinámica por tamaño:**
+- Tamaño 1.0 (lleno) → `moveTimeSlow` segundos/celda (lento, fácil)
+- Tamaño 0.15 (mínimo) → `moveTimeFast` segundos/celda (rápido, difícil)
+- Fórmula: `duration = Lerp(moveTimeFast, moveTimeSlow, InverseLerp(MinSize, InitialSize, currentSize))`
+
+**Configuración en LevelLoader** (Inspector):
+- `Move Time Slow` — velocidad con tamaño máximo (default `0.22`)
+- `Move Time Fast` — velocidad con tamaño mínimo (default `0.08`)
+- `Joystick Deadzone` — píxeles mínimos para registrar dirección (default `20`)
+
+**Teclado (testing):** mantener W/A/S/D o flechas = movimiento continuo.
 
 **Player Prefab**: `Assets/_Project/Prefabs/Player.prefab`
 - Contiene: `SphereController`, `ShrinkMechanic`, `PlayerMovement`
 - `LevelLoader` lo instancia en runtime con `Instantiate(_playerPrefab)`
-- Asignar en Inspector de LevelLoader (sección Prefabs)
 
 ## Calibración de dificultad — ShrinkMechanic
 
@@ -100,107 +113,157 @@ Tres modos seleccionables desde `LevelLoader` en el Inspector:
 sizePerStep = 0.85 × difficultyFactor ÷ shortestPathLength
 ```
 
-| difficultyFactor | Significado                    |
-| ---------------- | ------------------------------ |
-| 0.50             | Tutorial (niveles 1–3)        |
-| 0.65             | Aprendizaje (niveles 4–7)     |
-| 0.75             | Normal (niveles 8–10)         |
-| 0.80             | Exigente (niveles 11–15)      |
-| 0.85             | Difícil (niveles 16–20)      |
-| 0.90             | Muy difícil (niveles 21–25)  |
-| 0.95             | Casi perfecto (niveles 26–30) |
-| 0.95→1.0        | Infinito creciente             |
+| difficultyFactor | Significado |
+|------------------|-------------|
+| 0.50 | Tutorial (niveles 1–3) |
+| 0.65 | Aprendizaje (niveles 4–7) |
+| 0.75 | Normal (niveles 8–10) |
+| 0.80 | Exigente (niveles 11–15) |
+| 0.85 | Difícil (niveles 16–20) |
+| 0.90 | Muy difícil (niveles 21–25) |
+| 0.95 | Casi perfecto (niveles 26–30) |
+| 0.95→1.0 | Infinito creciente |
 
-- `autoCalibrate = true` (default): calcula sizePerStep automáticamente según el maze generado.
-- En Sistema 5, `difficultyFactor` vendrá del `LevelData` ScriptableObject de cada nivel.
-- Los callejones sin salida son gratis si el jugador retrocede completo (migajas recuperan el tamaño exacto).
+- `autoCalibrate = true` (default): calcula sizePerStep automáticamente.
+- Los callejones sin salida son gratis si el jugador retrocede completo.
 
 ## Estrellas (recolectables)
 
-- Visual: diamante (cuadrado rotado 45°), color amarillo configurable
+- Visual: diamante (cuadrado rotado 45°), color amarillo
 - Recompensa: bonus de tamaño (`starSizeBonus`, default `+0.05`)
 - Placement: greedy farthest-point sampling sobre celdas con detour score ≥ 2
-  - Detour score = `distFromStart + distFromExit - shortestPath` (0 = en el camino directo)
-  - Primera estrella: máximo detour score. Siguientes: máxima distancia a las ya colocadas
-  - Resultado: distribución uniforme por todo el maze, preferentemente en callejones
-- Configuración por nivel: `starCount` y `starSizeBonus` → en Sistema 5 vendrán de `LevelData`
+- Si hay `manualStarCells` en LevelData, reemplazan el algoritmo greedy completamente
 
-### Garantías actuales
+## Enemigos — Sistema 3.5 ✅
 
-- ✅ **Conectividad**: BFS con `size=1.0` — nunca detrás de NARROW ni en islas desconectadas
-- ⚠️ **Costeabilidad**: NO garantizada — es riesgo/recompensa intencional
+Todos los enemigos se mueven celda a celda. Tocar un enemigo = muerte instantánea (`RaiseLevelFail`).
+Todo enemigo devora la migaja de la celda al llegar (comportamiento en base class `EnemyController`).
 
-### Pendiente — garantía de estrellas costeables
+### Tipos implementados
 
-Implementar filtro opcional `minAffordableStars: int` para cuando `difficultyFactor ≥ 0.85`:
+| Tipo | Comportamiento | Color |
+|------|---------------|-------|
+| **PatrolEnemy** | Recorre un segmento fijo de ida y vuelta, rebota en paredes | Naranja `(1, 0.30, 0.10)` |
+| **TrailEnemy** | BFS hacia la migaja más reciente (`CrumbOrder.Last`), la devora al llegar | Naranja (mismo base) |
 
+### Spawning
+- **Manual (editor visual)**: `LevelData.manualEnemySpawns` — lista de `EnemySpawn { cell, type, patrolDir }`. Si hay entradas, ignora los contadores.
+- **Automático**: `patrolEnemyCount` y `trailEnemyCount` en `LevelData`. Posiciones aleatorias con seed reproducible, distancia Manhattan ≥ 5 del START.
+- Todos los enemigos se destruyen en `LevelLoader.UnloadCurrent()`.
+
+### Implementación base
+- `EnemyController` abstract: `MoveLoop()` coroutine, `CanEnter()`, `BuildVisual()`, colisión en `Update()`
+- `Initialize(MazeRenderer, SphereController, Vector2Int startCell)` — llamar tras instanciar
+- `PatrolEnemy.InitializePatrol(renderer, player, cell, dir)` — acepta dirección explícita
+- `ChooseNextCell()` abstract — cada subclase define su comportamiento
+- `OnArrivedAtCell(cell)` virtual — base devora migaja; override para efectos extra
+
+### Introducción por nivel
+- PatrolEnemy: desde nivel 12 (Mundo 2)
+- TrailEnemy: desde nivel 22 (Mundo 3, bloqueado tras IAP `world_3`)
+
+## Trampas — diseño
+
+Celdas de suelo especiales. Siempre visibles — el reto es de planning, no de sorpresa.
+
+### Implementadas
+
+| Tipo | Comportamiento | Color |
+|------|---------------|-------|
+| `TRAP_DRAIN` | Drena masa al pisarla. Cobra cada vez. Sin migaja. | Rojo oscuro `(0.70, 0.10, 0.30)` |
+| `TRAP_ONESHOT` | Se pisa una vez → WALL permanente. Bloquea el regreso. | Naranja `(0.95, 0.50, 0.10)` |
+| `SPIKE` | Muerte instantánea al pisar (igual que tocar enemigo). | Rojo `(0.90, 0.05, 0.05)` |
+
+- `TRAP_DRAIN`: desde nivel 8. Costo: `trapDrainCost = 0.08`.
+- `TRAP_ONESHOT`: desde nivel 12. Destruye base floor + overlay al activarse (fix aplicado).
+- BFS de validación usa las trampas en estado inicial → nivel siempre soluble.
+
+### Pendientes de implementar (backlog)
+
+Ver sección **Backlog de mecánicas**.
+
+## Tipos de celda actuales (MazeData)
+
+```csharp
+public enum CellType
+{
+    WALL, PATH, ROOM, CORRIDOR, DOOR,
+    START, EXIT, NARROW_06, NARROW_04,
+    TRAP_ONESHOT, TRAP_DRAIN,
+    SPIKE
+}
 ```
-presupuesto_desvíos = 0.85 - (sizePerStep × shortestPathLength)
-estrella costeable si: distancia_extra × sizePerStep × 2 ≤ presupuesto_desvíos
-```
 
-## Enemigos — diseño (pendiente Sistema 3.5)
+## Mecánica central — reglas inamovibles
 
-Los enemigos se introducen a partir de niveles intermedios. Tocar un enemigo = muerte instantánea.
+- Tamaño inicial esfera: `1.0`
+- Tamaño mínimo antes de muerte: `0.15`
+- Rango usable: `0.85`
+- `NARROW_06`: requiere tamaño < 0.6
+- `NARROW_04`: requiere tamaño < 0.4
+- Migajas: una por celda, recuperan exactamente el tamaño perdido al ser reabsorbidas
+- Puertas: consumen tamaño permanentemente (sin migaja), costo default `0.10`
+- Maze siempre tiene solución — validado con BFS
+- Tocar un enemigo = muerte instantánea
 
-### Tipos definidos
+## Niveles
 
-| Tipo                  | Comportamiento                                      | Efecto adicional                                            |
-| --------------------- | --------------------------------------------------- | ----------------------------------------------------------- |
-| **PatrolEnemy** | Recorre un segmento fijo de ida y vuelta            | Ninguno                                                     |
-| **TrailEnemy**  | Sigue el rastro de migajas del jugador y las devora | Elimina migajas (el jugador no puede recuperar ese tamaño) |
-| *(futuros)*         | Perseguidor directo, emboscador, etc.               | TBD                                                         |
+- **Mundo 1** (1–10): 20×12, sin timer, sin puertas, sin enemigos. NARROW_06 desde nivel 5. TRAP_DRAIN desde nivel 8. `MazeStyle.Dungeon`
+- **Mundo 2** (11–20): 25×15, sin timer, 1–2 puertas. PatrolEnemy desde nivel 12. NARROW_04 desde nivel 15. TRAP_ONESHOT desde nivel 12. `MazeStyle.Labyrinth`
+- **Mundo 3** (21–30): 35×20→40×24, con timer, 2–4 puertas. TrailEnemy desde nivel 22. Bloqueado tras IAP `world_3`. `MazeStyle.Labyrinth`
+- **Modo Infinito**: tras completar nivel 30 o IAP `infinite_pro`. Ver sección siguiente.
 
-### Reglas de diseño
+## Modo Infinito — Sistema 9 ⬜
 
-- Los enemigos se mueven por celdas (mismo grid que el jugador)
-- No pueden pasar por NARROW si son "grandes" (definir tamaño por tipo)
-- El TrailEnemy sigue la lista de celdas con migaja ordenada por antigüedad (la más reciente primero)
-- Al devorar una migaja: `MazeRenderer.AbsorbCrumb(cell)` pero sin darle el tamaño al jugador
-- Los enemigos deben mostrarse en el mapa de pausa
-- Velocidad configurable por tipo (`[SerializeField] float moveInterval`)
-- Carpeta: `Scripts/Enemies/`
-- Namespace: `Shrink.Enemies`
+Se desbloquea al completar el nivel 30 (o comprando `infinite_pro`). Es el loop de rejugabilidad post-game.
 
-### Por definir al implementar
+### Mecánica central
+- La **masa NO se reinicia** entre mazas — al salir del EXIT, entras al siguiente con la masa que tengas
+- Cada maze completado da un pequeño bonus fijo de masa: `+0.04` (dwindling: se puede ajustar)
+- Si la masa llega a `0.15` en cualquier punto → fin del run, score guardado
+- Score = mazes completados × masa final × modificador de estrellas recogidas
 
-- ¿En qué niveles aparece cada tipo?
-- ¿Cuántos enemigos por nivel?
-- ¿El TrailEnemy respawn de migajas o las elimina permanentemente?
-- ¿Hay power-up para ralentizarlos / asustarlos?
+### Escalado por run
+| Mazes completados | Tamaño del maze | Nuevos elementos |
+|---|---|---|
+| 1–5 | 20×12 | Solo PATH, puertas básicas |
+| 6–10 | 25×15 | TRAP_DRAIN, NARROW_06 |
+| 11–15 | 30×18 | PatrolEnemy, TRAP_ONESHOT |
+| 16–20 | 35×20 | TrailEnemy, NARROW_04, SPIKE |
+| 21–25 | 40×24 | Más enemigos, timer por maze |
+| 26+ | 45×28 cap | Todo + difficultyFactor → 1.0 |
 
-## HUD + Mapa en pausa — Sistema 4
+### Persistencia
+- `GameData` ya tiene `GameStats` — añadir campo `infiniteRecord: int` (mazes completados en mejor run)
+- Al morir: guardar score si es record personal
+- El run se descarta al cerrar la app (no hay guardado de estado mid-run)
 
-### Arquitectura UI
+### UI
+- Pantalla de run: contador de mazes y masa actual siempre visibles en HUD
+- Al morir: panel especial "RUN OVER" con score, record, botón Jugar de Nuevo
+- Leaderboard futuro: score global por plataforma (Game Center / Google Play)
 
-- **Un solo Canvas** en escena con dos paneles: `HUDView` (siempre visible) y `PauseView` (se activa/desactiva).
-- Los scripts `HUDController` y `PauseMapController` viven en el Canvas.
-- `GameBootstrap` referencia ambos via `[SerializeField]` — NO los crea en runtime.
-- Textos usan **TextMeshProUGUI** (`TMP_Text`), no `Text` legacy.
+### Semillas
+- Seed = `SystemTime.Now.Milliseconds + runIndex * 7919` — reproducible por run pero diferente cada vez
+- `difficultyFactor` escala con la fórmula: `Mathf.Clamp(0.75f + runIndex * 0.01f, 0.75f, 1.0f)`
 
-### HUDController (`Scripts/UI/HUDController.cs`)
-
-- **Barra de tamaño** (bottom): `Image` filled horizontal, verde → amarillo → rojo según ratio `(size - MinSize) / rango`
-- **Label de pasos** (`_sizeLabel`): muestra `~N` pasos restantes = `(size - MinSize) / sizePerStep`
-- **Contador de estrellas** (`_starsLabel`): `"recogidas/total"`
-- **Botón pausa** (`_pauseButton`): llama `PauseMapController.Open()`
-- Recibe `ShrinkMechanic` en `Initialize` para calcular pasos restantes por nivel
+## HUD + Pausa — Sistema 4
 
 ### PauseMapController (`Scripts/UI/PauseMapController.cs`)
 
-- Se activa con botón pausa (HUD) o tecla **Escape**
-- **Sin mapa** — el maze es el reto, el jugador usa sus propias migajas como guía
+- Se activa con botón pausa (HUD) o tecla Escape
 - `Time.timeScale = 0` al abrir, `= 1` al cerrar
-- Botón **CONTINUAR** — reanuda el juego
-- Botón **AÑADIR MASA** — muestra rewarded ad → da `rewardedSizeBonus` (default `0.15`) de tamaño
-- Botón **AÑADIR TIEMPO** — solo visible si el nivel tiene timer → da `rewardedTimeBonus` (default `30s`)
-- Los botones de recompensa se desactivan (`interactable = false`) si ya se usó el rewarded en este nivel
-- `Initialize(ShrinkMechanic shrink, LevelTimer timer)` — llamar desde LevelLoader
+- Botón **CONTINUAR** (`_resumeButton`) — reanuda el juego
+- Botón **REINTENTAR** (`_retryButton`) — recarga la escena activa (nuevo intento del mismo nivel)
+- Botón **MENÚ** (`_menuButton`) — va a MenuScene
+- Botón **AÑADIR MASA** (`_addSizeButton`) — rewarded ad → `+rewardedSizeBonus` (default `0.15`)
+- Botón **AÑADIR TIEMPO** (`_addTimeButton`) — solo visible si el nivel tiene timer → `+rewardedTimeBonus` (default `30s`)
+- Los botones de recompensa se desactivan si ya se usó el rewarded en este nivel
 
 ### Jerarquía de escena
 
 ```
-Canvas (Canvas, CanvasScaler, GraphicRaycaster, HUDController, PauseMapController)
+Canvas
   ├── HUDView
   │   ├── TopBar
   │   │   ├── StarsLabel     (TMP — _starsLabel)
@@ -209,93 +272,140 @@ Canvas (Canvas, CanvasScaler, GraphicRaycaster, HUDController, PauseMapControlle
   │       ├── LifeBar        (Image filled — _sizeBarFill)
   │       └── LifeText       (TMP — _sizeLabel)
   └── PauseView              (GameObject — _mapPanel, desactivado por defecto)
+      ├── ResumeButton       (Button — _resumeButton)
+      ├── RetryButton        (Button — _retryButton)
+      ├── MenuButton         (Button — _menuButton)
       ├── AddSizeButton      (Button — _addSizeButton)
-      ├── AddTimeButton      (Button — _addTimeButton, oculto si sin timer)
-      └── ResumeButton       (Button — _resumeButton)
+      └── AddTimeButton      (Button — _addTimeButton, oculto si sin timer)
 ```
+
+## GameResultController — Sistema 8
+
+```
+Canvas
+  ├── HUDView, PauseView (ver arriba)
+  ├── VictoryPanel
+  │   ├── Stars[]       (3× Image — _victoryStars)
+  │   ├── NextButton
+  │   └── MenuButton
+  ├── GameOverPanel
+  │   ├── RetryButton
+  │   ├── WatchAdButton
+  │   └── MenuButton
+  └── ReadyPanel
+      ├── BonusText     (TMP — _bonusText)
+      └── ContinueButton
+```
+
+- `_continueBonus = 0.30f` — masa que se añade al continuar tras anuncio
+- Usa flag `_applyRewardNextFrame` para callbacks de AdMob (hilo secundario)
+
+## Editor Visual de Niveles — Sistema E ✅
+
+Ventana: **Window → Shrink → Level Editor**
+
+### Qué se puede editar
+- **Estrellas**: colocar/quitar. Si hay manuales, reemplazan el algoritmo greedy.
+- **Trampas**: `TRAP_DRAIN`, `TRAP_ONESHOT`, `SPIKE`
+- **Puertas**: `DOOR`
+- **NARROW**: `NARROW_06`, `NARROW_04`
+- **Estructura**: abrir muros (WALL→PATH) o cerrar celdas (PATH→WALL)
+- **Enemigos**: `→ Patrulla H`, `↑ Patrulla V`, `◎ Rastreador`
+- **Dificultad**: slider `difficultyFactor` con sizePerStep y margen en vivo
+- **Masa por estrella**: slider `starSizeBonus` con balance total en vivo
+- **Camino óptimo**: toggle overlay azul del BFS START→EXIT (se recalcula al editar estructura)
+
+### Datos en LevelData
+```csharp
+List<CellOverride>  manualOverrides    // tipo de celda por posición
+List<Vector2Int>    manualStarCells    // posiciones manuales de estrellas
+List<EnemySpawn>    manualEnemySpawns  // { cell, type, patrolDir }
+```
+
+---
+
+## Backlog de mecánicas futuras
+
+Estas mecánicas están diseñadas y aprobadas para implementar después de los 30 niveles base. Se documentan aquí para que el siguiente sprint las tenga como referencia sin tener que rediscutirlas.
+
+### Nuevos tipos de enemigo
+
+| Tipo | Comportamiento | Efecto especial | Introducción sugerida |
+|------|---------------|-----------------|----------------------|
+| **ChaserEnemy** | BFS directo hacia el jugador. Rápido, predecible. | Ninguno — la amenaza es la persecución pura | Nivel 18 |
+| **AmbushEnemy** | Estático hasta que el jugador entra en radio N. Persigue brevemente, vuelve a su post. | Obliga a planificar rutas cerca del ambush. Se distingue visualmente del suelo | Nivel 20 |
+| **GhostEnemy** | Atraviesa paredes (ignora WALL al moverse). Solo el jugador puede bloquearlo usando NARROW. | Obliga a buscar pasajes estrechos como refugio | Nivel 25 |
+| **MirrorEnemy** | Se mueve en dirección opuesta al jugador (player va →, mirror va ←). Mismo grid. | Crea rutas forzadas simétricas — si vas a un callejón, él también va | Modo Infinito |
+
+**Reglas base (heredadas de EnemyController):**
+- Todos devoran migajas al pasar
+- Todos matan al contacto
+- GhostEnemy necesita `CanEnterGhost()` que ignora WALL
+
+### Nuevos tipos de trampa
+
+| Tipo | Comportamiento | Coste / Duración | Introducción |
+|------|---------------|-----------------|--------------|
+| `TRAP_SLOW` | Al pisarla, el moveTime se multiplica por 2 durante N segundos | Duración: 4s. Sin pérdida de masa directa — te hace más lento y fácil de atrapar | Nivel 14 |
+| `TRAP_INVERT` | Invierte los controles del joystick durante N segundos | Duración: 3s. El reto es navegar con izquierda=derecha, arriba=abajo | Nivel 19 |
+| `TRAP_TELEPORT` | Teletransporta al jugador a una celda aleatoria walkable | Instant. La celda destino siempre es alcanzable pero puede estar lejos del EXIT | Nivel 23 |
+| `TRAP_CONTINUOUS` | Drena masa por segundo mientras el jugador está PARADO sobre ella. No cobra al moverse. | Rate: `0.02/s`. Penaliza detenerse a pensar en zona peligrosa | Nivel 16 |
+| `TRAP_TOGGLE` | Al pisarla, levanta un WALL temporal bloqueando el paso detrás. Dura N segundos. | Duración: 6s. Crea puertas de un solo sentido temporales | Nivel 22 |
+
+**Reglas comunes:**
+- Siempre visibles — colores distintos entre tipos
+- Los efectos de tiempo (`SLOW`, `INVERT`) usan una cola de efectos activos, no se cancelan entre sí
+- `TRAP_CONTINUOUS` requiere que `PlayerMovement` exponga un flag `IsMoving` — drena solo si `!IsMoving`
+- Los efectos de control (`INVERT`) se aplican en `PlayerMovement.ReadJoystickInput()` como multiplicador de dirección `-1`
+
+### Nuevas variantes de pico
+
+| Tipo | Comportamiento | Implementación |
+|------|---------------|---------------|
+| `SPIKE_TIMED` | Aparece y desaparece en ciclo (e.g. 2s activo, 2s inactivo). Visible siempre, color indica estado. | MonoBehaviour con coroutine alterna `Data.Grid[x,y]` entre SPIKE y PATH |
+| `SPIKE_PRESSURE` | Invisible hasta que el jugador entra en celda adyacente. Entonces revela con animación flash. | Se registra en MazeRenderer como overlay oculto. `ShrinkMechanic` lo revela al acercarse. |
+| `SPIKE_LINKED` | Par de picos vinculados (A y B) que alternan: cuando A está activo, B está inactivo. | Comparten un timer. El jugador puede cruzar B cuando A está activo y viceversa. |
+
+### Nuevas celdas especiales
+
+| Tipo | Comportamiento | Notas de diseño |
+|------|---------------|-----------------|
+| `ICE` | El jugador desliza 2–3 celdas en la dirección elegida sin poder frenar antes. | Visualmente azul claro. Muy efectivo en Labyrinth — crea momentum forzado. |
+| `PORTAL_A` / `PORTAL_B` | Celdas enlazadas: entrar en A sale en B (y viceversa). | Siempre en pares. El BFS las trata como aristas adicionales para garantizar solubilidad. |
+| `SWITCH` | Al pisarlo activa/desactiva una WALL específica en otra celda del maze. | El par SWITCH↔WALL se asigna en LevelData. El editor visual muestra la vinculación con una línea. |
+| `CONVEYOR` | Empuja al jugador una celda extra en una dirección al terminar el movimiento. | Dirección fija por celda. Puede empujar hacia paredes (el jugador se detiene) o hacia trampas. |
+| `KEY` / `LOCK_DOOR` | El jugador recoge KEYs para desbloquear LOCK_DOORs. | Alternativa a las puertas normales — requiere exploración activa. |
+
+### Puertas — mecánica definitiva (Opción A implementada)
+
+Las puertas (`DOOR`) actúan como checkpoints obligatorios:
+- El EXIT aparece bloqueado hasta que el jugador haya pisado TODAS las puertas del nivel
+- HUD muestra contador `🚪 N/N` de puertas activadas
+- Cada puerta consume `doorCost = 0.10` de masa al pisarla (sin migaja)
+- Diseño visual: la puerta se "abre" visualmente (cambia color) al ser activada
+- **Pendiente de implementar**: el sistema de tracking de puertas en `ShrinkMechanic` y el lock visual del EXIT
+
+---
 
 ## Localización — Sistema L
 
-### Arquitectura
-
-- **`LocalizationManager`** — clase estática en `Shrink.Core`. No requiere GameObject. Llamar `Init()` desde `GameBootstrap` tras inicializar `SaveManager`.
-- **`LocalizedText`** — componente `[RequireComponent(TMP_Text)]` en `Shrink.UI`. Adjuntar a cualquier TextMeshProUGUI con una `_key` asignada en Inspector. Se suscribe a `GameEvents.OnLanguageChanged` y actualiza automáticamente.
-
-### Idiomas soportados
-
-| Código | Idioma | Auto-detect (SystemLanguage) |
-|--------|--------|------------------------------|
-| `en` | English (default) | Cualquier otro |
-| `es` | Español | `SystemLanguage.Spanish` |
-| `pt` | Português | `SystemLanguage.Portuguese` |
-| `fr` | Français | `SystemLanguage.French` |
-| `de` | Deutsch | `SystemLanguage.German` |
-
 ### API pública
-
 ```csharp
-LocalizationManager.Init();                    // Llamar desde GameBootstrap
-LocalizationManager.SetLanguage("fr");         // Cambia idioma y guarda en SaveManager
-LocalizationManager.CycleNext();               // Cicla al siguiente idioma
-LocalizationManager.Get("play");               // Devuelve texto en idioma activo
-LocalizationManager.CurrentLanguageName;       // "FRANÇAIS", "ESPAÑOL", etc.
+LocalizationManager.Init();
+LocalizationManager.SetLanguage("fr");
+LocalizationManager.Get("play");
+LocalizationManager.CurrentLanguageName;  // "FRANÇAIS", etc.
 ```
 
 ### Claves disponibles
-
 | Clave | Descripción |
 |-------|-------------|
 | `back`, `play`, `settings`, `store` | Navegación principal |
 | `sfx`, `music`, `movement`, `language` | Settings |
-| `move_slide`, `move_cont`, `move_step` | Modos de movimiento |
 | `noad_name`, `noad_desc`, `full_name`, `full_desc` | Tienda IAP |
 | `buy`, `owned`, `restore` | Acciones tienda |
 | `gameover`, `victory`, `retry`, `watch_ad`, `menu`, `next`, `cont_btn` | Pantallas resultado |
 | `resume`, `add_size`, `add_time` | Pausa |
-
-### Persistencia
-
-- El idioma se guarda en `GameData.settings.language` (string código).
-- Al init, si no hay preferencia guardada se auto-detecta desde `Application.systemLanguage`.
-- `SaveManager.SaveLanguage(string code)` — método requerido en SaveManager.
-
-### Evento
-
-```csharp
-GameEvents.OnLanguageChanged   // Action — emitido por LocalizationManager.SetLanguage()
-GameEvents.RaiseLanguageChanged()
-```
-
-## GameResultController — Sistema 8 (parcial)
-
-Controla los paneles de victoria y game over en GameScene. Script en `Shrink.UI`.
-
-- **Inicialización**: `Initialize(ShrinkMechanic shrink)` — llamar desde `LevelLoader` al cargar nivel.
-- **Victory panel**: muestra 3 estrellas (Image coloreadas), botones Siguiente y Menú.
-- **Game Over panel**: botones Reintentar, Ver Anuncio (rewarded) y Menú.
-- **Ready panel**: se muestra tras ver el anuncio rewarded — confirma el bonus y tiene botón CONTINUAR.
-- `_continueBonus = 0.30f` — masa que se añade al continuar tras anuncio.
-- Usa `_forcesPause = true` + `Update` para mantener `Time.timeScale = 0` mientras los paneles están activos (evita el reset de AdMob).
-- El callback de AdMob llega en hilo secundario — usa flag `_applyRewardNextFrame` para diferir al hilo principal.
-
-### Jerarquía sugerida (GameScene Canvas)
-
-```
-Canvas
-  ├── HUDView           (HUDController)
-  ├── PauseView         (PauseMapController)
-  ├── VictoryPanel      (GameResultController._victoryPanel)
-  │   ├── Stars[]       (3× Image — _victoryStars)
-  │   ├── NextButton
-  │   └── MenuButton
-  ├── GameOverPanel     (GameResultController._gameOverPanel)
-  │   ├── RetryButton
-  │   ├── WatchAdButton
-  │   └── MenuButton
-  └── ReadyPanel        (GameResultController._readyPanel)
-      ├── BonusText     (TMP — _bonusText)
-      └── ContinueButton
-```
 
 ## Convenciones de código
 
@@ -308,157 +418,85 @@ Canvas
   - `OnSizeChanged`, `OnMigajaAbsorbed`, `OnNarrowPassageBlocked`
   - `OnStarCollected(int collected, int total)`
   - `OnTimerTick(float remaining)`, `OnTrapActivated(Vector2Int cell, CellType type)`
-  - `OnLanguageChanged` — emitido por `LocalizationManager.SetLanguage()`
-- Namespaces: `Shrink.Core`, `Shrink.Maze`, `Shrink.Player`, `Shrink.Enemies`, etc.
-- Un archivo = una clase (sin excepciones)
-- Nombres de archivo en PascalCase, exactamente igual al nombre de la clase
+  - `OnLanguageChanged`
+- Namespaces: `Shrink.Core`, `Shrink.Maze`, `Shrink.Player`, `Shrink.Enemies`, `Shrink.Level`, `Shrink.UI`, etc.
+- Un archivo = una clase
 - Input: `Keyboard.current` y `Touchscreen.current` (New Input System)
-
-## Tipos de celda (MazeData)
-
-```csharp
-public enum CellType
-{
-    WALL, PATH, ROOM, CORRIDOR, DOOR,
-    START, EXIT, NARROW_06, NARROW_04,
-    TRAP_ONESHOT, TRAP_DRAIN          // ← Sistema de trampas (pendiente)
-}
-```
-
-## Trampas — diseño
-
-Celdas de suelo especiales que actúan como trampas al ser pisadas. Se insertan en el maze igual que puertas y narrow.
-
-### Tipos implementados (pendiente)
-
-| Tipo | Comportamiento | Efecto |
-|---|---|---|
-| `TRAP_ONESHOT` | Se pisa una vez → se convierte en WALL permanentemente | Cierra el camino de regreso. Penaliza no planear la ruta. Interacción clave con migajas: si pisas la trampa, tu ruta de regreso queda cortada |
-| `TRAP_DRAIN` | Drena tamaño al pisarla. Se puede volver a pisar (cobra cada vez) | Sin migaja depositada. Costo configurable (`trapDrainCost`, default `0.08`). Penaliza rutas que cruzan la zona repetidamente |
-
-### Tipo pendiente para futuro
-
-| Tipo | Comportamiento |
-|---|---|
-| `TRAP_TOGGLE` | Al pisarla levanta una WALL temporal durante N segundos bloqueando el paso hacia atrás. Crea puertas de un solo sentido temporales. Para mundos avanzados |
-
-### Reglas de diseño
-
-- Las trampas son siempre visibles (el jugador puede verlas antes de pisarlas) — el reto es de planning, no de sorpresa
-- **Colores**: `TRAP_ONESHOT` = naranja `(0.95, 0.50, 0.10)` | `TRAP_DRAIN` = rojo oscuro `(0.70, 0.10, 0.30)`
-- `TRAP_ONESHOT` al activarse: cambia a WALL en `MazeData.Grid` y destruye su visual
-- `TRAP_DRAIN` no deposita migaja — la pérdida es permanente igual que las puertas. Costo: `trapDrainCost = 0.08`
-- El BFS de validación se ejecuta con las trampas en estado inicial (todas walkables) → nivel siempre soluble
-- Configuración por nivel: `trapOneshotCount` y `trapDrainCount` en `LevelData`
-- Namespace: `Shrink.Maze` (son tipos de celda, no entidades separadas)
-- Introducción: `TRAP_DRAIN` desde nivel 8, `TRAP_ONESHOT` desde nivel 12
-
-### Mejora futura — trampas cerca de estrellas
-
-Colocar `TRAP_DRAIN` preferentemente en celdas adyacentes a estrellas para que recogerlas tenga un coste real. Actualmente no es posible sin refactorizar porque las trampas se insertan en `MazeGenerator` y las estrellas se colocan después en `MazeRenderer` (no comparten contexto). Implementar cuando se revise el pipeline de generación.
-
-## Mecánica central — reglas inamovibles
-
-- Tamaño inicial esfera: `1.0`
-- Tamaño mínimo antes de muerte: `0.15`
-- Rango usable: `0.85`
-- `NARROW_06`: requiere tamaño < 0.6
-- `NARROW_04`: requiere tamaño < 0.4
-- Migajas: una por celda, recuperan exactamente el tamaño perdido al ser reabsorbidas
-- Puertas: consumen tamaño permanentemente (sin migaja depositada), costo default `0.10`
-- El maze siempre tiene solución — validado con BFS, `ShortestPathLength` guardado en `MazeData`
-- Tocar un enemigo = muerte instantánea (fire `OnLevelFail`)
-
-## Niveles
-
-- Mundo 1 (1–10): 20×12, sin tiempo, sin puertas, sin enemigos. NARROW_06 desde nivel 5. TRAP_DRAIN desde nivel 8. MazeStyle: Dungeon
-- Mundo 2 (11–20): 25×15, sin tiempo, 1–2 puertas, PatrolEnemy desde nivel 12. NARROW_04 desde nivel 15. TRAP_ONESHOT desde nivel 12. MazeStyle: Labyrinth
-- Mundo 3 (21–30): 35×20 → 40×24, con timer, 2–4 puertas, TrailEnemy desde nivel 22 (bloqueado tras IAP). MazeStyle: Labyrinth
-- Modo infinito: semillas aleatorias, dificultad creciente, todos los tipos de enemigo. MazeStyle: Labyrinth
 
 ## Monetización
 
-| Producto          | Precio | ID sugerido      |
-| ----------------- | ------ | ---------------- |
-| Sin anuncios      | $1.99  | `no_ads`       |
-| Pack Colores      | $0.99  | `color_pack`   |
-| Mundo 3           | $1.99  | `world_3`      |
-| Modo Infinito Pro | $2.99  | `infinite_pro` |
+| Producto | Precio | ID |
+|----------|--------|----|
+| Sin anuncios | $1.99 | `no_ads` |
+| Pack Colores | $0.99 | `color_pack` |
+| Mundo 3 | $1.99 | `world_3` |
+| Modo Infinito Pro | $2.99 | `infinite_pro` |
 
-- Interstitial AdMob: cada 3 niveles completados (se dispara en `HandleLevelComplete`)
-- Rewarded AdMob: disponible desde el panel de pausa → Añadir masa (+0.15) o Añadir tiempo (+30s). Máximo 1 por nivel.
-- Si el jugador tiene `no_ads`: `AdsDisabled()` devuelve true y no se muestra ningún anuncio
-- `AdManager.IsRewardedAvailable` — consultar antes de mostrar botones de recompensa en UI
-- IDs configurados en `AdManager.cs` con `#if UNITY_IOS / #else` para iOS/Android
+- Interstitial AdMob: cada 3 niveles completados
+- Rewarded: desde pausa (masa/tiempo), máximo 1 por nivel
+- `infinite_pro` desbloquea Modo Infinito sin necesitar completar nivel 30
 
 ## Rendimiento
 
 - Target: 60 fps estable en Android gama media
 - Sin allocations en Update — usar pools para migajas y celdas
-- El maze se genera en un hilo separado si supera 30×18 (via `GenerateAsync`)
+- Mazes >30×18 se generan en hilo separado via `GenerateAsync`
 
-## Ideas de diseño visual — pendientes para el final
+## Diseño visual — tema definitivo: LLAMA DE FUEGO
 
-### Player como puñado de arena (idea pendiente)
-- En lugar de esfera sólida, el jugador sería una masa asimétrica de partículas de arena
-- Al moverse deja granos de arena (migajas) en lugar de círculos
-- El desgaste sería visualmente literal: pierdes granos de arena
-- **Alternativa intermedia**: mantener la forma circular base + partículas de arena decorativas alrededor (legibilidad de tamaño sin perder la estética)
-- **Bloqueante**: legibilidad de tamaño en pantalla pequeña y rendimiento en mobile
-- Revisar cuando todos los sistemas estén completos y el juego sea jugable
+**Decisión tomada.** El personaje es una llama/bola de fuego. Todo el theming gira alrededor de fuego vs. agua/viento. Implementar cuando los 30 niveles estén curados y el gameplay sea sólido.
 
-## Editor Visual de Niveles — Sistema E (pendiente)
+### Personaje — Llama
+- Círculo naranja/amarillo con glow (segundo círculo concéntrico más grande, color más tenue)
+- Al perder masa: color vira hacia rojo oscuro (agonizante). Al mínimo: casi extinguiéndose.
 
-Herramienta de Unity Editor para curar manualmente el contenido de cada nivel después de la generación procedural. El maze se sigue generando por código — el editor solo permite sobrescribir celdas específicas.
+### Migajas — Brasas
+- Puntos pequeños naranja/rojo tenue — brasas que quedó la llama al pasar
+- Al reabsorberse: flash breve de color cálido
 
-### Qué se puede editar
-- **Estrellas**: mover, añadir o quitar posiciones (override del algoritmo greedy)
-- **Trampas**: colocar `TRAP_DRAIN` o `TRAP_ONESHOT` en celdas específicas
-- **Puertas**: añadir `DOOR` manualmente además de las generadas
-- **NARROW**: colocar `NARROW_06` o `NARROW_04` en pasillos concretos
-- **Masa local**: celdas con bonus/penalización de tamaño (idea futura)
+### EXIT — Hoguera / Fogata
+- Círculo grande amarillo/naranja con líneas irradiando — la llama busca unirse a algo más grande
 
-### Arquitectura
+### Paredes — Carbón / Piedra oscura
+- Fondo negro `(0.05, 0.05, 0.07)`, paredes gris carbón `(0.15, 0.14, 0.13)`
+- Contraste alto con la llama naranja — muy legible en pantalla pequeña
 
-**`LevelData`** añade campo:
-```csharp
-[SerializeField] public List<CellOverride> manualOverrides;
+### SPIKE — Charco de agua
+- Círculo azul con ondas concéntricas (alpha bajo) — el agua apaga la llama
+- Muerte instantánea: la llama se apaga
 
-[Serializable]
-public struct CellOverride
-{
-    public Vector2Int cell;
-    public CellType   type;
-}
-```
+### Recolectables — Reemplazar estrellas
+- Las estrellas no tienen sentido temático con fuego
+- **Candidatos**: chispas grandes (estrella de fuego), leños/troncos (combustible), velas pequeñas
+- **Decisión pendiente**: elegir entre chispa, leño o vela
 
-**`MazeGenerator` / `MazeRenderer`** aplica los overrides después de generar, antes de renderizar.
+### Enemigos — Agua y viento
+- **PatrolEnemy**: gota de agua o nube de lluvia — azul, patrulla fija
+- **TrailEnemy**: corriente de viento — blanco/celeste, persigue brasas
+- **ChaserEnemy** (futuro): chorro de agua directo — azul intenso
 
-**`MazeLevelEditor`** — ventana custom en `Scripts/Maze/Editor/`:
-- Genera el maze de la LevelData seleccionada y lo dibuja en Scene view
-- Click izquierdo sobre una celda + tipo seleccionado → añade override a `manualOverrides`
-- Click derecho → elimina override de esa celda
-- Botón "Limpiar todos los overrides"
-- Overlay de colores: overrides manuales se muestran distintos a los procedurales
-- Se guarda automáticamente en el ScriptableObject al modificar
+### Trampas recontextualizadas
+- `TRAP_DRAIN`: charco permanente — la llama se moja cada vez que pasa
+- `TRAP_ONESHOT`: placa de hielo — se derrite al pisar pero deja hueco (WALL)
+- `TRAP_SLOW` (futuro): barro mojado
+- `TRAP_INVERT` (futuro): torbellino de viento
 
-### Flujo de uso
-1. Seleccionar `LevelData` en Project
-2. Abrir ventana **Window → Shrink → Level Editor**
-3. El maze se genera con la semilla del nivel y se previsualiza
-4. Seleccionar tipo de celda en la toolbar (estrella, trampa, puerta, etc.)
-5. Click en las celdas del maze para colocar overrides
-6. Los cambios se guardan en el ScriptableObject → el juego los aplica en runtime
+### Paleta base
+| Elemento | Color |
+|----------|-------|
+| Fondo | `(0.05, 0.05, 0.07)` |
+| Paredes | `(0.15, 0.14, 0.13)` |
+| Llama llena | `(1.0, 0.55, 0.05)` |
+| Llama mínima | `(0.7, 0.10, 0.05)` |
+| Brasas | `(0.9, 0.35, 0.05)` |
+| Hoguera EXIT | `(1.0, 0.85, 0.20)` |
+| Agua/SPIKE | `(0.10, 0.45, 0.90)` |
+| Chispa recolectable | `(1.0, 0.95, 0.60)` |
 
-### Archivos a crear
-```
-Scripts/Maze/Editor/MazeLevelEditor.cs   ← EditorWindow principal
-```
-Modificar:
-```
-Scripts/Level/LevelData.cs              ← añadir manualOverrides
-Scripts/Maze/MazeGenerator.cs           ← aplicar overrides tras generar
-```
+### Notas de implementación
+- Todo con `ShapeFactory` — círculos y cuadrados, sin sprites externos
+- Glow de la llama: segundo `SpriteRenderer` color más claro, `sortingOrder` menor, escala 1.3×
+- Ondas del charco: dos círculos concéntricos con alpha bajo
 
 ---
 

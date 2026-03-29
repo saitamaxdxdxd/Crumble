@@ -7,7 +7,7 @@ namespace Shrink.Monetization
 {
     /// <summary>
     /// Singleton que gestiona los anuncios AdMob.
-    /// Interstitial: se muestra cada 3 niveles completados.
+    /// Interstitial: se muestra cada N eventos (level complete o level fail) con cooldown mínimo de tiempo.
     /// Rewarded: se muestra en game over para continuar con 50% de tamaño o +30 segundos.
     /// No muestra anuncios si el jugador compró "Sin anuncios".
     /// </summary>
@@ -36,7 +36,10 @@ namespace Shrink.Monetization
         // Configuración
         // ──────────────────────────────────────────────────────────────────────
 
-        [SerializeField] private int levelsPerInterstitial = 3;
+        [Tooltip("Eventos (complete o fail) necesarios antes de mostrar un interstitial.")]
+        [SerializeField] private int   eventsPerInterstitial    = 3;
+        [Tooltip("Segundos mínimos entre interstitials, sin importar los eventos acumulados.")]
+        [SerializeField] private float minSecondsBetweenAds     = 60f;
 
         // ──────────────────────────────────────────────────────────────────────
         // Estado
@@ -45,8 +48,9 @@ namespace Shrink.Monetization
         private InterstitialAd _interstitialAd;
         private RewardedAd     _rewardedAd;
 
-        private int  _levelsSinceLastAd = 0;
-        private bool _rewardedUsedThisLevel = false;
+        private int   _eventsSinceLastAd    = 0;
+        private float _lastAdRealTime       = -999f;
+        private bool  _rewardedUsedThisLevel = false;
 
         // ──────────────────────────────────────────────────────────────────────
         // Eventos
@@ -135,18 +139,20 @@ namespace Shrink.Monetization
         // ──────────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Muestra el interstitial si corresponde (cada N niveles y sin "no_ads").
-        /// Llamar desde la pantalla de nivel completado (Sistema 8).
+        /// Registra un evento de resolución (complete o fail) y muestra el interstitial
+        /// si se acumularon N eventos Y han pasado al menos <see cref="minSecondsBetweenAds"/> segundos.
         /// </summary>
         public void TryShowInterstitial()
         {
             if (AdsDisabled()) return;
 
-            _levelsSinceLastAd++;
-            if (_levelsSinceLastAd < levelsPerInterstitial) return;
+            _eventsSinceLastAd++;
+            if (_eventsSinceLastAd < eventsPerInterstitial) return;
+            if (Time.realtimeSinceStartup - _lastAdRealTime < minSecondsBetweenAds) return;
             if (_interstitialAd == null || !_interstitialAd.CanShowAd()) return;
 
-            _levelsSinceLastAd = 0;
+            _eventsSinceLastAd = 0;
+            _lastAdRealTime    = Time.realtimeSinceStartup;
             _interstitialAd.Show();
             _interstitialAd.OnAdFullScreenContentClosed += () => LoadInterstitial();
         }
@@ -201,7 +207,7 @@ namespace Shrink.Monetization
 
         private void HandleLevelFail()
         {
-            // La UI de game over (Sistema 8) llamará ShowRewarded() si el jugador lo pide.
+            TryShowInterstitial();
         }
 
         // ──────────────────────────────────────────────────────────────────────
