@@ -16,16 +16,115 @@ MonoBehaviour:
   mazeWidth: 25
   mazeHeight: 15
   mazeStyle: 1
-  seed: 0
-  difficultyFactor: 0.85
+  seed: 1
+  difficultyFactor: 0.8
   doorCount: 2
   narrow06Count: 3
   narrow04Count: 2
   trapOneshotCount: 2
   trapDrainCount: 3
+  spikeCount: 0
   starCount: 4
   starSizeBonus: 0.05
-  hasTimer: 0
-  timeLimit: 120
-  manualOverrides: []
-  manualStarCells: []
+  patrolEnemyCount: 0
+  trailEnemyCount: 0
+  hasTimer: 1
+  timeLimit: 90
+  manualOverrides:
+  - cell: {x: 6, y: 10}
+    type: 11
+  - cell: {x: 16, y: 1}
+    type: 1
+  - cell: {x: 7, y: 6}
+    type: 1
+  - cell: {x: 1, y: 10}
+    type: 9
+  - cell: {x: 3, y: 12}
+    type: 10
+  - cell: {x: 6, y: 1}
+    type: 1
+  - cell: {x: 10, y: 3}
+    type: 1
+  - cell: {x: 9, y: 2}
+    type: 1
+  - cell: {x: 1, y: 3}
+    type: 1
+  - cell: {x: 3, y: 4}
+    type: 1
+  - cell: {x: 17, y: 1}
+    type: 1
+  - cell: {x: 20, y: 1}
+    type: 1
+  - cell: {x: 18, y: 3}
+    type: 1
+  - cell: {x: 2, y: 8}
+    type: 10
+  - cell: {x: 2, y: 10}
+    type: 11
+  - cell: {x: 3, y: 10}
+    type: 10
+  - cell: {x: 4, y: 10}
+    type: 11
+  - cell: {x: 5, y: 10}
+    type: 10
+  - cell: {x: 4, y: 5}
+    type: 1
+  - cell: {x: 11, y: 6}
+    type: 1
+  - cell: {x: 13, y: 6}
+    type: 10
+  - cell: {x: 10, y: 6}
+    type: 11
+  - cell: {x: 12, y: 6}
+    type: 11
+  - cell: {x: 10, y: 1}
+    type: 11
+  - cell: {x: 10, y: 2}
+    type: 11
+  - cell: {x: 20, y: 7}
+    type: 1
+  - cell: {x: 22, y: 8}
+    type: 1
+  - cell: {x: 20, y: 8}
+    type: 1
+  - cell: {x: 19, y: 7}
+    type: 0
+  - cell: {x: 18, y: 7}
+    type: 0
+  - cell: {x: 23, y: 4}
+    type: 1
+  - cell: {x: 9, y: 8}
+    type: 10
+  - cell: {x: 16, y: 10}
+    type: 10
+  - cell: {x: 18, y: 10}
+    type: 1
+  manualStarCells:
+  - {x: 15, y: 1}
+  - {x: 3, y: 12}
+  - {x: 17, y: 11}
+  manualEnemySpawns:
+  - cell: {x: 19, y: 9}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 15, y: 11}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 15, y: 7}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 11, y: 5}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 22, y: 7}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 3, y: 9}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 5, y: 11}
+    type: 0
+    patrolDir: {x: 1, y: 0}
+  - cell: {x: 20, y: 8}
+    type: 0
+    patrolDir: {x: 1, y: 0}

@@ -103,6 +103,19 @@ namespace Shrink.Core
             Save();
         }
 
+        /// <summary>
+        /// Guarda el récord del Modo Infinito si supera el anterior.
+        /// </summary>
+        /// <param name="mazesCompleted">Mazes completados en este run.</param>
+        public void SaveInfiniteRecord(int mazesCompleted)
+        {
+            if (mazesCompleted > Data.stats.infiniteRecord)
+            {
+                Data.stats.infiniteRecord = mazesCompleted;
+                Save();
+            }
+        }
+
         /// <summary>Incrementa el contador de muertes y guarda.</summary>
         public void RegisterDeath()
         {

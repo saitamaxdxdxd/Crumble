@@ -15,7 +15,6 @@ namespace Shrink.Enemies
         // ──────────────────────────────────────────────────────────────────────
 
         private Vector2Int _target;
-        private bool       _hasTarget;
 
         // ──────────────────────────────────────────────────────────────────────
         // Comportamiento
@@ -32,8 +31,7 @@ namespace Shrink.Enemies
             if (crumbOrder.Count == 0)
                 return CurrentCell;
 
-            _target    = crumbOrder[crumbOrder.Count - 1];
-            _hasTarget = true;
+            _target = crumbOrder[crumbOrder.Count - 1];
 
             // BFS un paso hacia el objetivo
             Vector2Int next = BfsNextStep(CurrentCell, _target);

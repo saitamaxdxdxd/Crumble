@@ -136,6 +136,18 @@ namespace Shrink.Core
             "resume"        => "RESUME",
             "add_size"      => "ADD MASS",
             "add_time"      => "ADD TIME",
+            // Modo Infinito — menú y modal bloqueado
+            "infinite"               => "INFINITE",
+            "infinite_locked"        => "LOCKED",
+            "infinite_locked_desc"   => "Complete {0} levels to unlock\nor purchase Infinite Pro",
+            "infinite_locked_buy"    => "UNLOCK — INFINITE PRO",
+            // Modo Infinito — HUD y RUN OVER
+            "infinite_hud_maze"      => "MAZE {0}",
+            "run_over"               => "RUN OVER",
+            "run_mazes"              => "MAZES",
+            "run_score"              => "SCORE",
+            "run_best"               => "BEST",
+            "play_again"             => "PLAY AGAIN",
             _               => key,
         };
 
@@ -173,6 +185,16 @@ namespace Shrink.Core
             "resume"        => "CONTINUAR",
             "add_size"      => "AÑADIR MASA",
             "add_time"      => "AÑADIR TIEMPO",
+            "infinite"               => "INFINITO",
+            "infinite_locked"        => "BLOQUEADO",
+            "infinite_locked_desc"   => "Completa {0} niveles para desbloquear\no compra Infinito Pro",
+            "infinite_locked_buy"    => "DESBLOQUEAR — INFINITO PRO",
+            "infinite_hud_maze"      => "LABERINTO {0}",
+            "run_over"               => "FIN DEL RUN",
+            "run_mazes"              => "LABERINTOS",
+            "run_score"              => "PUNTUACIÓN",
+            "run_best"               => "RÉCORD",
+            "play_again"             => "JUGAR DE NUEVO",
             _               => EN(key),
         };
 
@@ -210,6 +232,16 @@ namespace Shrink.Core
             "resume"        => "CONTINUAR",
             "add_size"      => "ADICIONAR MASSA",
             "add_time"      => "ADICIONAR TEMPO",
+            "infinite"               => "INFINITO",
+            "infinite_locked"        => "BLOQUEADO",
+            "infinite_locked_desc"   => "Complete {0} níveis para desbloquear\nou compre Infinito Pro",
+            "infinite_locked_buy"    => "DESBLOQUEAR — INFINITO PRO",
+            "infinite_hud_maze"      => "LABIRINTO {0}",
+            "run_over"               => "FIM DO RUN",
+            "run_mazes"              => "LABIRINTOS",
+            "run_score"              => "PONTUAÇÃO",
+            "run_best"               => "RECORDE",
+            "play_again"             => "JOGAR DE NOVO",
             _               => EN(key),
         };
 
@@ -247,6 +279,16 @@ namespace Shrink.Core
             "resume"        => "FORTSETZEN",
             "add_size"      => "MASSE HINZUFÜGEN",
             "add_time"      => "ZEIT HINZUFÜGEN",
+            "infinite"               => "UNENDLICH",
+            "infinite_locked"        => "GESPERRT",
+            "infinite_locked_desc"   => "Schließe {0} Level ab, um freizuschalten\noder kaufe Infinite Pro",
+            "infinite_locked_buy"    => "FREISCHALTEN — INFINITE PRO",
+            "infinite_hud_maze"      => "LEVEL {0}",
+            "run_over"               => "RUN VORBEI",
+            "run_mazes"              => "LEVELS",
+            "run_score"              => "PUNKTE",
+            "run_best"               => "BESTLEISTUNG",
+            "play_again"             => "NOCHMAL SPIELEN",
             _               => EN(key),
         };
 
@@ -284,6 +326,16 @@ namespace Shrink.Core
             "resume"        => "REPRENDRE",
             "add_size"      => "AJOUTER MASSE",
             "add_time"      => "AJOUTER TEMPS",
+            "infinite"               => "INFINI",
+            "infinite_locked"        => "VERROUILLÉ",
+            "infinite_locked_desc"   => "Terminez {0} niveaux pour débloquer\nou achetez Infinite Pro",
+            "infinite_locked_buy"    => "DÉBLOQUER — INFINITE PRO",
+            "infinite_hud_maze"      => "LABYRINTHE {0}",
+            "run_over"               => "FIN DU RUN",
+            "run_mazes"              => "LABYRINTHES",
+            "run_score"              => "SCORE",
+            "run_best"               => "RECORD",
+            "play_again"             => "REJOUER",
             _               => EN(key),
         };
     }

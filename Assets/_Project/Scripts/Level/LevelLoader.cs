@@ -180,14 +180,35 @@ namespace Shrink.Level
             var used = new HashSet<Vector2Int>();
 
             // ── PatrolEnemies ─────────────────────────────────────────────────
-            for (int i = 0; i < levelData.PatrolEnemyCount && candidates.Count > 0; i++)
-            {
-                Vector2Int cell = PickUnused(candidates, used, rng);
-                used.Add(cell);
+            // Requiere al menos 3 celdas de recorrido para que el jugador pueda pasar
+            const int MinPatrolLength = 3;
 
-                var go      = new GameObject($"PatrolEnemy_{i}");
-                var patrol  = go.AddComponent<PatrolEnemy>();
-                Vector2Int dir = BestPatrolDir(mazeData, cell);
+            for (int i = 0; i < levelData.PatrolEnemyCount; i++)
+            {
+                Vector2Int cell = Vector2Int.zero;
+                Vector2Int dir  = Vector2Int.right;
+                bool found = false;
+
+                for (int attempt = 0; attempt < 40; attempt++)
+                {
+                    if (candidates.Count == 0) break;
+                    Vector2Int candidate = PickUnused(candidates, used, rng);
+                    Vector2Int candDir   = BestPatrolDir(mazeData, candidate, out int patrolLen);
+                    used.Add(candidate);
+
+                    if (patrolLen >= MinPatrolLength)
+                    {
+                        cell  = candidate;
+                        dir   = candDir;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) break;
+
+                var go     = new GameObject($"PatrolEnemy_{i}");
+                var patrol = go.AddComponent<PatrolEnemy>();
                 patrol.InitializePatrol(_renderer, _sphere, cell, dir);
                 _enemies.Add(patrol);
             }
@@ -218,25 +239,28 @@ namespace Shrink.Level
         }
 
         /// <summary>
-        /// Determina la mejor dirección de patrulla: el eje con mayor extensión transitable.
+        /// Determina la mejor dirección de patrulla midiendo en ambos sentidos del eje.
+        /// Devuelve la longitud total del corredor en <paramref name="totalLength"/>
+        /// (celda del enemigo incluida) para que el caller valide si es suficiente.
         /// </summary>
-        private static Vector2Int BestPatrolDir(MazeData data, Vector2Int cell)
+        private static Vector2Int BestPatrolDir(MazeData data, Vector2Int cell, out int totalLength)
         {
             Vector2Int[] dirs = { Vector2Int.right, Vector2Int.up };
-            int bestLen = -1;
+            int bestLen = 0;
             Vector2Int bestDir = Vector2Int.right;
 
             foreach (var d in dirs)
             {
-                int len = 0;
-                var c   = cell + d;
-                while (data.InBounds(c.x, c.y) && data.Grid[c.x, c.y] != CellType.WALL)
-                {
-                    len++;
-                    c += d;
-                }
+                int len = 1; // la celda del propio enemigo
+                var c = cell + d;
+                while (data.InBounds(c.x, c.y) && data.Grid[c.x, c.y] != CellType.WALL) { len++; c += d; }
+                c = cell - d;
+                while (data.InBounds(c.x, c.y) && data.Grid[c.x, c.y] != CellType.WALL) { len++; c -= d; }
+
                 if (len > bestLen) { bestLen = len; bestDir = d; }
             }
+
+            totalLength = bestLen;
             return bestDir;
         }
 

@@ -52,6 +52,8 @@ namespace Shrink.Core
         public int levelsPlayed;
         public int totalDeaths;
         public int adsWatched;
+        /// <summary>Record personal del Modo Infinito: mazes completados en el mejor run.</summary>
+        public int infiniteRecord;
     }
 
     /// <summary>Preferencias del jugador.</summary>

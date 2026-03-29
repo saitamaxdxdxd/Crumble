@@ -118,5 +118,45 @@ namespace Shrink.Level
         /// el spawning aleatorio (ignora patrolEnemyCount y trailEnemyCount).
         /// </summary>
         public List<EnemySpawn>   ManualEnemySpawns => manualEnemySpawns;
+
+        // ──────────────────────────────────────────────────────────────────────
+        // Modo Infinito — configuración en tiempo de ejecución
+        // ──────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Configura este LevelData para usarlo en el Modo Infinito.
+        /// Llamar sobre una instancia creada con <c>ScriptableObject.CreateInstance&lt;LevelData&gt;()</c>.
+        /// </summary>
+        public void ConfigureForInfinite(
+            int width, int height, int mazeSeed, float difficulty,
+            MazeStyle style,
+            int doors, int narrow06, int narrow04,
+            int trapDrain, int trapOneshot, int spikes,
+            int patrols, int trails,
+            bool timerEnabled, float timerSeconds,
+            int stars, float starBonus)
+        {
+            levelNumber      = 0;
+            mazeWidth        = width;
+            mazeHeight       = height;
+            mazeStyle        = style;
+            seed             = mazeSeed;
+            difficultyFactor = difficulty;
+            doorCount        = doors;
+            narrow06Count    = narrow06;
+            narrow04Count    = narrow04;
+            trapDrainCount   = trapDrain;
+            trapOneshotCount = trapOneshot;
+            spikeCount       = spikes;
+            patrolEnemyCount = patrols;
+            trailEnemyCount  = trails;
+            hasTimer         = timerEnabled;
+            timeLimit        = timerSeconds;
+            starCount        = stars;
+            starSizeBonus    = starBonus;
+            manualOverrides.Clear();
+            manualStarCells.Clear();
+            manualEnemySpawns.Clear();
+        }
     }
 }

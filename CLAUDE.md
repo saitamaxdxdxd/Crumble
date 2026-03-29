@@ -62,7 +62,7 @@ FX/Particles/
 | L | Localización | ✅ Completo | EN, ES, PT, FR, DE — auto-detect + guardado en SaveManager |
 | 8 | UI completa | ✅ Completo | Boot + Menu + LevelSelect + GameResult + Localización |
 | E | Editor visual de niveles | ✅ Completo | Ver sección Editor Visual |
-| 9 | Modo Infinito | ⬜ Pendiente | Tras completar los 30 niveles — ver sección Modo Infinito |
+| 9 | Modo Infinito | ✅ Completo | InfiniteGameManager + InfiniteHUDController + InfiniteScene — ver sección Modo Infinito |
 | F | Mecánicas futuras | ⬜ Backlog | Enemigos adicionales, trampas avanzadas, celdas especiales — ver sección Backlog |
 
 ## Generación de maze — MazeStyle
@@ -73,9 +73,9 @@ public enum MazeStyle { Dungeon, Labyrinth, Hybrid }
 
 | Estilo | Algoritmo | Usar para |
 |--------|-----------|-----------|
-| Dungeon | BSP (cuartos + corredores) | Niveles 1–9 |
-| Labyrinth | Recursive Backtracker DFS | Niveles 10–30 y Modo Infinito |
-| Hybrid | Backtracker + cuartos tallados | Alternativa con zonas abiertas |
+| Dungeon | BSP (cuartos + corredores) | Niveles 1–9, Infinito mazes 1–6 |
+| Labyrinth | Recursive Backtracker DFS | Niveles 10–30, Infinito mazes 17+ |
+| Hybrid | Backtracker + cuartos tallados | Infinito mazes 7–16 |
 
 - **Labyrinth es el modo recomendado** para gameplay real — corredores de 1 celda de ancho.
 - BSP genera cuartos grandes donde el joystick se degrada.
@@ -213,39 +213,51 @@ public enum CellType
 - **Mundo 3** (21–30): 35×20→40×24, con timer, 2–4 puertas. TrailEnemy desde nivel 22. Bloqueado tras IAP `world_3`. `MazeStyle.Labyrinth`
 - **Modo Infinito**: tras completar nivel 30 o IAP `infinite_pro`. Ver sección siguiente.
 
-## Modo Infinito — Sistema 9 ⬜
+## Modo Infinito — Sistema 9 ✅
 
-Se desbloquea al completar el nivel 30 (o comprando `infinite_pro`). Es el loop de rejugabilidad post-game.
+Se desbloquea completando **15 niveles** (gratis) o comprando `infinite_pro` ($2.99) o `full_game`.
+Escena: `InfiniteScene`. Scripts: `InfiniteGameManager` + `InfiniteHUDController`.
 
 ### Mecánica central
-- La **masa NO se reinicia** entre mazas — al salir del EXIT, entras al siguiente con la masa que tengas
-- Cada maze completado da un pequeño bonus fijo de masa: `+0.04` (dwindling: se puede ajustar)
-- Si la masa llega a `0.15` en cualquier punto → fin del run, score guardado
-- Score = mazes completados × masa final × modificador de estrellas recogidas
+- La **masa NO se reinicia** entre mazes — al salir del EXIT entras al siguiente con la masa que tengas
+- Cada maze completado da un bonus de masa: `+0.04` (ajustable en Inspector de `InfiniteGameManager`)
+- Si la masa llega a `0.15` → fin del run, score guardado en `GameStats.infiniteRecord`
+- Score = `mazes × (masaNormalizada 0–100)` — ejemplo: 12 mazes con 60% masa = 720 pts
 
-### Escalado por run
-| Mazes completados | Tamaño del maze | Nuevos elementos |
-|---|---|---|
-| 1–5 | 20×12 | Solo PATH, puertas básicas |
-| 6–10 | 25×15 | TRAP_DRAIN, NARROW_06 |
-| 11–15 | 30×18 | PatrolEnemy, TRAP_ONESHOT |
-| 16–20 | 35×20 | TrailEnemy, NARROW_04, SPIKE |
-| 21–25 | 40×24 | Más enemigos, timer por maze |
-| 26+ | 45×28 cap | Todo + difficultyFactor → 1.0 |
+### Escalado real (implementado en `InfiniteGameManager.BuildLevelData()`)
+| Maze | Tamaño | Estilo | Estrellas | Elementos nuevos |
+|------|--------|--------|-----------|-----------------|
+| 1–3 | 20×12 | Dungeon | 6 × 0.09 | — Solo exploración |
+| 4–6 | 20×12 | Dungeon | 6 × 0.09 | PatrolEnemy (1) |
+| 7–8 | 20×12 | Dungeon | 6 × 0.09 | TrailEnemy (1) — contrarresta backtracking |
+| 9–10 | 25×15 | Hybrid | 5 × 0.07 | NARROW_06, TRAP_DRAIN, puertas |
+| 11–16 | 25–30×15–18 | Hybrid | 5 × 0.07 | TRAP_ONESHOT, más enemigos |
+| 17–21 | 35×20 | Hybrid→Labyrinth | 3 × 0.05 | NARROW_04, SPIKE, TrailEnemy (2) |
+| 22+ | 40–45×24–28 | Labyrinth | 3 × 0.05 | Timer (90s→45s), dificultad → 1.0 |
 
-### Persistencia
-- `GameData` ya tiene `GameStats` — añadir campo `infiniteRecord: int` (mazes completados en mejor run)
-- Al morir: guardar score si es record personal
-- El run se descarta al cerrar la app (no hay guardado de estado mid-run)
+### Dificultad
+- `difficultyFactor = Clamp(0.55 + mazeIndex × 0.015, 0.55, 1.0)`
+- Maze 1: 0.55 (accesible) → Maze 30: 0.97 → Maze 30+: 1.0 (play perfecto)
 
-### UI
-- Pantalla de run: contador de mazes y masa actual siempre visibles en HUD
-- Al morir: panel especial "RUN OVER" con score, record, botón Jugar de Nuevo
-- Leaderboard futuro: score global por plataforma (Game Center / Google Play)
+### PatrolEnemy — validación de espacio
+- El spawn requiere ≥ 3 celdas de recorrido total (medidas en ambas direcciones del eje)
+- Si no hay celda válida tras 40 intentos, el enemigo no spawna (mejor sin enemigo que imposible)
 
 ### Semillas
-- Seed = `SystemTime.Now.Milliseconds + runIndex * 7919` — reproducible por run pero diferente cada vez
-- `difficultyFactor` escala con la fórmula: `Mathf.Clamp(0.75f + runIndex * 0.01f, 0.75f, 1.0f)`
+- `RunBaseSeed = UnityEngine.Random.Range(1, 99999)` — diferente cada run
+- `mazeSeed = RunBaseSeed + mazeIndex × 7919` — reproducible dentro del run
+
+### UI de InfiniteScene
+```
+Canvas
+  ├── HUDView                 (HUDController — igual que GameScene)
+  ├── PauseView               (PauseMapController — Retry recarga InfiniteScene = nuevo run)
+  ├── InfiniteStatsOverlay    (siempre visible: MazeLabel, MassLabel)
+  ├── MazeCompleteFlash       (aparece 1.4s al completar cada maze, luego se oculta)
+  └── RunOverPanel            (full-screen al morir: mazes, score, récord, Play Again, Menu)
+```
+- `InfiniteHUDController` va en el Canvas. Gestiona overlay + flash + RunOverPanel.
+- `InfiniteGameManager` + `LevelLoader` van en el mismo GameObject (`InfiniteManager`).
 
 ## HUD + Pausa — Sistema 4
 
