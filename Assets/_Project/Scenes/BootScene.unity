@@ -457,7 +457,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd237b20b3ad5432590c87758a244807, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Shrink.Monetization.AdManager
-  levelsPerInterstitial: 3
+  eventsPerInterstitial: 3
+  minSecondsBetweenAds: 60
 --- !u!114 &671382498
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -541,6 +542,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: dd926de190dd445fca98b5b39dd77ea8, type: 2}
   - {fileID: 11400000, guid: 33f71f5ed9fbb4a18b74f094ae7a7c8f, type: 2}
   - {fileID: 11400000, guid: 3f969434b690e401699a92c7db50acbd, type: 2}
+  - {fileID: 11400000, guid: b987fd54a51e441fa90979a0c6aa2964, type: 2}
+  - {fileID: 11400000, guid: de8c864754a1043cbaa35329e1223d25, type: 2}
   startLevelIndex: 0
 --- !u!1 &1375250405
 GameObject:

@@ -33,7 +33,7 @@ Scripts/
   Audio/         AudioManager
 
 ScriptableObjects/
-  Levels/        30 LevelData assets (Level_01 … Level_30)
+  Levels/        LevelData assets (Level_01 … Level_N, crece con cada mundo)
   Colors/        Paletas de color (IAP)
 
 Prefabs/
@@ -73,8 +73,8 @@ public enum MazeStyle { Dungeon, Labyrinth, Hybrid }
 
 | Estilo | Algoritmo | Usar para |
 |--------|-----------|-----------|
-| Dungeon | BSP (cuartos + corredores) | Niveles 1–9, Infinito mazes 1–6 |
-| Labyrinth | Recursive Backtracker DFS | Niveles 10–30, Infinito mazes 17+ |
+| Dungeon | BSP (cuartos + corredores) | Niveles 1–8, Infinito mazes 1–6 |
+| Labyrinth | Recursive Backtracker DFS | Niveles 9–30+, Infinito mazes 17+ |
 | Hybrid | Backtracker + cuartos tallados | Infinito mazes 7–16 |
 
 - **Labyrinth es el modo recomendado** para gameplay real — corredores de 1 celda de ancho.
@@ -117,11 +117,12 @@ sizePerStep = 0.85 × difficultyFactor ÷ shortestPathLength
 |------------------|-------------|
 | 0.50 | Tutorial (niveles 1–3) |
 | 0.65 | Aprendizaje (niveles 4–7) |
-| 0.75 | Normal (niveles 8–10) |
-| 0.80 | Exigente (niveles 11–15) |
-| 0.85 | Difícil (niveles 16–20) |
+| 0.75 | Normal (niveles 8–11) |
+| 0.80 | Exigente (niveles 12–15) — fin Mundo 1 |
+| 0.85 | Difícil (niveles 16–20) — inicio Mundo 2 |
 | 0.90 | Muy difícil (niveles 21–25) |
-| 0.95 | Casi perfecto (niveles 26–30) |
+| 0.95 | Casi perfecto (niveles 26–30) — fin Mundo 2 |
+| 0.85→0.95 | Mundo 3 (31–45), escalado progresivo |
 | 0.95→1.0 | Infinito creciente |
 
 - `autoCalibrate = true` (default): calcula sizePerStep automáticamente.
@@ -166,8 +167,8 @@ Todo enemigo devora la migaja de la celda al llegar (comportamiento en base clas
 - `PlayerMovement` escucha `OnPlayerRevived` y resetea `_isMoving = false`
 
 ### Introducción por nivel
-- PatrolEnemy: desde nivel 12 (Mundo 2)
-- TrailEnemy: desde nivel 22 (Mundo 3, bloqueado tras IAP `world_3`)
+- PatrolEnemy: desde nivel 12 (Mundo 1, últimos niveles)
+- TrailEnemy: nivel 19 solo (tutorial del enemigo, sin PatrolEnemy ese nivel), nivel 20 combinado con PatrolEnemy, escala en Mundo 2 desde nivel ~25
 
 ## Trampas — diseño
 
@@ -213,16 +214,27 @@ public enum CellType
 - Maze siempre tiene solución — validado con BFS
 - Tocar un enemigo = muerte instantánea
 
-## Niveles
+## Niveles y mundos
 
-- **Mundo 1** (1–10): 20×12, sin timer, sin puertas, sin enemigos. NARROW_06 desde nivel 5. TRAP_DRAIN desde nivel 8. `MazeStyle.Dungeon`
-- **Mundo 2** (11–20): 25×15, sin timer, 1–2 puertas. PatrolEnemy desde nivel 12. NARROW_04 desde nivel 15. TRAP_ONESHOT desde nivel 12. `MazeStyle.Labyrinth`
-- **Mundo 3** (21–30): 35×20→40×24, con timer, 2–4 puertas. TrailEnemy desde nivel 22. Bloqueado tras IAP `world_3`. `MazeStyle.Labyrinth`
-- **Modo Infinito**: tras completar nivel 30 o IAP `infinite_pro`. Ver sección siguiente.
+| Mundo | Niveles | Acceso | Tamaño | Timer | Mecánicas nuevas |
+|-------|---------|--------|--------|-------|-----------------|
+| **Mundo 1** | 1–15 | **GRATIS** | 20×12→25×15 | No | NARROW_06 (5), TRAP_DRAIN (8), TRAP_ONESHOT (12), PatrolEnemy (12), NARROW_04 (15) |
+| **Mundo 2** | 16–30 | 💰 `full_game` | 25×15→35×20 | Desde ~nivel 26 | TrailEnemy solo (19→solo en M1 ya), combinaciones, mayor dificultad |
+| **Mundo 3** | 31–45 | 💰 incluido | 35×20→40×24 | Sí | Nuevas trampas, portales, power-ups/desventajas, nuevos enemigos |
+| **Mundo N** | 46+ | 💰 incluido | escala | Sí | Contenido de updates futuros |
+
+- Los mundos futuros (3, 4…) se incluyen en la misma compra de `full_game` — argumento de venta: "el juego sigue creciendo"
+- **Modo Infinito**: al completar los 15 niveles del Mundo 1 (gratis) o IAP `infinite_pro`. Ver sección siguiente.
+
+### MazeStyle por mundo
+- **Mundo 1 (1–8)**: `MazeStyle.Dungeon`
+- **Mundo 1 (9–15)**: `MazeStyle.Labyrinth`
+- **Mundo 2 (16–30)**: `MazeStyle.Labyrinth`
+- **Mundo 3 (31–45)**: `MazeStyle.Labyrinth`
 
 ## Modo Infinito — Sistema 9 ✅
 
-Se desbloquea completando **15 niveles** (gratis) o comprando `infinite_pro` ($2.99) o `full_game`.
+Se desbloquea completando los **15 niveles del Mundo 1** (gratis) o comprando `infinite_pro` ($2.99).
 Escena: `InfiniteScene`. Scripts: `InfiniteGameManager` + `InfiniteHUDController`.
 
 ### Mecánica central
@@ -461,16 +473,17 @@ LocalizationManager.CurrentLanguageName;  // "FRANÇAIS", etc.
 
 ## Monetización
 
-| Producto | Precio | ID |
-|----------|--------|----|
-| Sin anuncios | $1.99 | `no_ads` |
-| Pack Colores | $0.99 | `color_pack` |
-| Mundo 3 | $1.99 | `world_3` |
-| Modo Infinito Pro | $2.99 | `infinite_pro` |
+| Producto | Precio | ID | Desbloquea |
+|----------|--------|----|------------|
+| Juego Completo | **$2.99** | `full_game` | Mundo 2, 3 y mundos futuros (incluidos en la misma compra) |
+| Sin anuncios | $1.99 | `no_ads` | Elimina interstitials para siempre |
+| Pack Colores | $0.99 | `color_pack` | Paletas de color adicionales |
+| Modo Infinito Pro | $2.99 | `infinite_pro` | Modo Infinito sin necesitar completar Mundo 1 |
 
-- Interstitial AdMob: cada 3 niveles completados
+- Interstitial AdMob: cada 3 niveles completados (solo jugadores sin `full_game` ni `no_ads`)
 - Rewarded: desde pausa (masa/tiempo), máximo 1 por nivel
-- `infinite_pro` desbloquea Modo Infinito sin necesitar completar nivel 30
+- `infinite_pro` y `full_game` pueden venderse juntos como bundle si se quiere
+- **Precio a $4.99** cuando se lance con Mundo 2 + Mundo 3 completos simultáneamente
 
 ## Rendimiento
 
@@ -533,6 +546,20 @@ LocalizationManager.CurrentLanguageName;  // "FRANÇAIS", etc.
 - Todo con `ShapeFactory` — círculos y cuadrados, sin sprites externos
 - Glow de la llama: segundo `SpriteRenderer` color más claro, `sortingOrder` menor, escala 1.3×
 - Ondas del charco: dos círculos concéntricos con alpha bajo
+
+---
+
+## Sistemas futuros — post Mundo 2
+
+Implementar en este orden, después de que Mundo 2 (niveles 16–30) esté completo y curado.
+
+| # | Sistema | Descripción |
+|---|---------|-------------|
+| 10 | Notificaciones push | Unity Mobile Notifications (local, sin servidor) para recordatorios diarios y reenganche. Firebase si se quieren remotas. |
+| 11 | Reto diario | Un maze generado con semilla = fecha del día. Todos los jugadores juegan el mismo nivel. Score por masa restante + tiempo. Accesible sin pagar. |
+| 12 | Rankings / Leaderboard | Google Play Games (Android) + Game Center (iOS). Tablas: Reto Diario y Modo Infinito. Unity Gaming Services Leaderboards como alternativa cross-platform. |
+| 13 | Logros / Achievements | Game Center + Google Play Games. Ejemplos: "Completa 5 niveles sin morir", "Alcanza 30 mazes en Infinito", "Obtén todas las estrellas del Mundo 1". |
+| 14 | Cloud Save | Unity Gaming Services Cloud Save. Evita pérdida de progreso al cambiar de dispositivo. |
 
 ---
 

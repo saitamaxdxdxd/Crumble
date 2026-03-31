@@ -5932,7 +5932,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3f969434b690e401699a92c7db50acbd, type: 2}
   - {fileID: 11400000, guid: b987fd54a51e441fa90979a0c6aa2964, type: 2}
   - {fileID: 11400000, guid: de8c864754a1043cbaa35329e1223d25, type: 2}
-  startLevelIndex: 16
+  - {fileID: 11400000, guid: ff31a7a849c3942afa814c68652028f0, type: 2}
+  - {fileID: 11400000, guid: c23200b07ae704465ae2013958135e16, type: 2}
+  - {fileID: 11400000, guid: a3bf819e2350c45ca87faf63fd7a9c10, type: 2}
+  startLevelIndex: 19
 --- !u!4 &2130069601
 Transform:
   m_ObjectHideFlags: 0
