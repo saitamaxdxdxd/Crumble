@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -50,6 +51,7 @@ namespace Shrink.Core
         [SerializeField] private Audio.AudioManager      audioManager;
         [SerializeField] private Monetization.IAPManager iapManager;
         [SerializeField] private Monetization.AdManager  adManager;
+        [SerializeField] private UGSManager              ugsManager;
 
         [Header("Escena destino")]
         [SerializeField] private string menuSceneName = "MenuScene";
@@ -85,6 +87,11 @@ namespace Shrink.Core
             audioManager.LoadSavedVolumes();
             LocalizationManager.Init();
 
+            // Arrancar UGS en paralelo con los logos (no bloquea el boot)
+            Task ugsTask = null;
+            if (ugsManager != null)
+                ugsTask = ugsManager.InitializeAsync();
+
             if (logos != null)
             {
                 foreach (var entry in logos)
@@ -94,6 +101,17 @@ namespace Shrink.Core
                     yield return StartCoroutine(Fade(entry.canvasGroup, 0f, 1f, fadeInTime));
                     yield return StartCoroutine(PlayLogoContent(entry));
                     yield return StartCoroutine(Fade(entry.canvasGroup, 1f, 0f, fadeOutTime));
+                }
+            }
+
+            // Esperar a UGS antes de cargar el menú (máx. 5 s por si hay timeout)
+            if (ugsTask != null)
+            {
+                float waited = 0f;
+                while (!ugsTask.IsCompleted && waited < 5f)
+                {
+                    waited += Time.unscaledDeltaTime;
+                    yield return null;
                 }
             }
 

@@ -1,4 +1,5 @@
 using Shrink.Audio;
+using Shrink.Core;
 using Shrink.Monetization;
 using TMPro;
 using UnityEngine;
@@ -109,7 +110,7 @@ namespace Shrink.UI
 
             priceText.text         = owned ? string.Empty : priceStr;
             buyButton.interactable = !owned;
-            buyText.text           = owned ? "✓ OBTENIDO" : "COMPRAR";
+            buyText.text           = owned ? LocalizationManager.Get("owned") : LocalizationManager.Get("buy");
         }
     }
 }

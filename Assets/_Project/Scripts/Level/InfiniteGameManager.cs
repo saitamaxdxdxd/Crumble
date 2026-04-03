@@ -40,10 +40,13 @@ namespace Shrink.Level
         // ──────────────────────────────────────────────────────────────────────
 
         /// <summary>Número de mazes completados en el run actual.</summary>
-        public int   MazesCompleted { get; private set; }
+        public int   MazesCompleted  { get; private set; }
+
+        /// <summary>Estrellas recogidas en el run actual (acumuladas entre mazes).</summary>
+        public int   StarsCollected  { get; private set; }
 
         /// <summary>Semilla base del run (fijada al iniciar y usada para generar cada maze).</summary>
-        public int   RunBaseSeed    { get; private set; }
+        public int   RunBaseSeed     { get; private set; }
 
         private bool _runActive;
 
@@ -63,12 +66,14 @@ namespace Shrink.Level
         {
             GameEvents.OnLevelComplete += HandleMazeComplete;
             GameEvents.OnLevelFail     += HandleRunOver;
+            GameEvents.OnStarCollected += HandleStarCollected;
         }
 
         private void OnDisable()
         {
             GameEvents.OnLevelComplete -= HandleMazeComplete;
             GameEvents.OnLevelFail     -= HandleRunOver;
+            GameEvents.OnStarCollected -= HandleStarCollected;
         }
 
         private void Start()
@@ -84,6 +89,7 @@ namespace Shrink.Level
         public void BeginRun()
         {
             MazesCompleted = 0;
+            StarsCollected = 0;
             RunBaseSeed    = UnityEngine.Random.Range(1, 99999);
             _runActive     = true;
 
@@ -110,13 +116,19 @@ namespace Shrink.Level
             if (!_runActive) return;
             _runActive = false;
 
-            float finalMass = _loader.Sphere?.CurrentSize ?? SphereController.MinSize;
-            int   score     = ComputeScore(MazesCompleted, finalMass);
+            int   score     = ComputeScore(MazesCompleted, StarsCollected);
             int   record    = SaveManager.Instance?.Data.stats.infiniteRecord ?? 0;
-
             SaveManager.Instance?.SaveInfiniteRecord(MazesCompleted);
             // Releer el récord tras guardarlo (puede haber mejorado)
             record = SaveManager.Instance?.Data.stats.infiniteRecord ?? record;
+
+            // Enviar score al leaderboard y sincronizar cloud save (fire-and-forget)
+            var ugs = Core.UGSManager.Instance;
+            if (ugs != null)
+            {
+                _ = ugs.SubmitScoreAsync(score);
+                _ = ugs.PushToCloudAsync();
+            }
 
             _infiniteHud?.ShowRunOver(MazesCompleted, score, record);
         }
@@ -228,11 +240,13 @@ namespace Shrink.Level
         /// Score = mazes completados × (masa final normalizada 0–100).
         /// Ejemplo: 12 mazes con 0.60 de masa = 12 × 60 = 720.
         /// </summary>
-        private static int ComputeScore(int mazes, float mass)
+        private void HandleStarCollected(int collected, int total) => StarsCollected++;
+
+        private static int ComputeScore(int mazes, int stars)
         {
-            float massNorm = (mass - SphereController.MinSize) /
-                             (SphereController.InitialSize - SphereController.MinSize);
-            return Mathf.RoundToInt(mazes * Mathf.Clamp01(massNorm) * 100f);
+            // 100 pts por maze + 10 pts por estrella recogida en todo el run
+            // Desempata jugadores que llegan al mismo maze
+            return mazes * 100 + stars * 10;
         }
 
         // ──────────────────────────────────────────────────────────────────────

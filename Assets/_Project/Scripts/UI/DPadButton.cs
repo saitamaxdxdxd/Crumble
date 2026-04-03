@@ -6,8 +6,12 @@ namespace Shrink.UI
     /// <summary>
     /// Botón individual del D-pad. Gestiona su propio press/release y notifica a DPadController.
     /// Press = empieza a mover en esta dirección. Release = para.
+    /// IBeginDragHandler + IDragHandler vacíos evitan que el drag burbujee a DPadController
+    /// y dispare OnPointerUp prematuramente al mover el dedo sobre el botón.
     /// </summary>
-    public class DPadButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+    public class DPadButton : MonoBehaviour,
+        IPointerDownHandler, IPointerUpHandler,
+        IBeginDragHandler, IDragHandler
     {
         [Tooltip("(0,1)=Up  (0,-1)=Down  (-1,0)=Left  (1,0)=Right")]
         [SerializeField] public Vector2Int direction;
@@ -30,5 +34,8 @@ namespace Shrink.UI
             if (_controller == null || _controller.IsEditMode) return;
             _controller.OnButtonUp(direction);
         }
+
+        public void OnBeginDrag(PointerEventData eventData) { }
+        public void OnDrag(PointerEventData eventData)      { }
     }
 }

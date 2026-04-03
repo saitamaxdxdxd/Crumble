@@ -157,6 +157,7 @@ namespace Shrink.Core
             "done"                   => "DONE",
             "vibration_on"           => "VIBRATION  ON",
             "vibration_off"          => "VIBRATION  OFF",
+            "change_name"            => "YOUR NAME",
             _               => key,
         };
 
@@ -212,6 +213,7 @@ namespace Shrink.Core
             "done"                   => "LISTO",
             "vibration_on"           => "VIBRACIÓN  ON",
             "vibration_off"          => "VIBRACIÓN  OFF",
+            "change_name"            => "TU NOMBRE",
             _               => EN(key),
         };
 

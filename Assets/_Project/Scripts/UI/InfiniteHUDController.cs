@@ -48,6 +48,7 @@ namespace Shrink.UI
         [SerializeField] private TMP_Text   _runOverScoreValue;
         [SerializeField] private TMP_Text   _runOverBestLabel;
         [SerializeField] private TMP_Text   _runOverBestValue;
+        [SerializeField] private TMP_Text   _leaderboardText;
         [SerializeField] private TMP_Text   _playAgainText;
         [SerializeField] private TMP_Text   _menuText;
         [SerializeField] private Button     _playAgainButton;
@@ -135,11 +136,58 @@ namespace Shrink.UI
             if (_runOverScoreValue != null) _runOverScoreValue.text = score.ToString();
             if (_runOverBestValue  != null)
             {
-                bool isNewRecord = mazesCompleted >= record;
-                _runOverBestValue.text = record.ToString() + (isNewRecord && mazesCompleted > 0 ? "  ★" : "");
+                bool isNewRecord = mazesCompleted >= record && mazesCompleted > 0;
+                _runOverBestValue.text = record.ToString() + (isNewRecord ? "  NEW" : "");
             }
 
             _runOverPanel.SetActive(true);
+
+            // Cargar leaderboard en background si el campo está asignado
+            if (_leaderboardText != null)
+                StartCoroutine(LoadLeaderboardCoroutine(score));
+        }
+
+        private IEnumerator LoadLeaderboardCoroutine(int playerScore)
+        {
+            var ugs = Core.UGSManager.Instance;
+            if (ugs == null || !ugs.IsReady) yield break;
+
+            if (_leaderboardText != null)
+                _leaderboardText.text = "…";
+
+            // Esperar a que el submit del score actual se procese en el servidor
+            var submitTask = ugs.SubmitScoreAsync(playerScore);
+            while (!submitTask.IsCompleted) yield return null;
+
+            var task = ugs.GetLeaderboardAsync(5);
+            while (!task.IsCompleted) yield return null;
+
+            if (_leaderboardText == null) yield break;
+
+            var (top, playerEntry) = task.Result;
+            if (top == null || top.Count == 0)
+            {
+                _leaderboardText.text = "";
+                yield break;
+            }
+
+            var sb = new System.Text.StringBuilder();
+            foreach (var entry in top)
+            {
+                bool isMe = playerEntry != null && entry.PlayerId == playerEntry.PlayerId;
+                string mark = isMe ? " YOU" : "";
+                string name = entry.PlayerName?.Split('#')[0] ?? "???";
+                sb.AppendLine($"{entry.Rank + 1}.  {name}  {(int)entry.Score}{mark}");
+            }
+
+            // Si el jugador no está en el top, mostrar su posición al final
+            if (playerEntry != null && playerEntry.Rank >= top.Count)
+            {
+                string name = playerEntry.PlayerName?.Split('#')[0] ?? "???";
+                sb.AppendLine($"{playerEntry.Rank + 1}.  {name}  {(int)playerEntry.Score}  YOU");
+            }
+
+            _leaderboardText.text = sb.ToString().TrimEnd();
         }
 
         // ──────────────────────────────────────────────────────────────────────

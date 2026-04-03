@@ -69,6 +69,9 @@ namespace Shrink.Core
 
         /// <summary>Vibración háptica activada.</summary>
         public bool vibrationEnabled = true;
+
+        /// <summary>Nombre del jugador en el ranking. Se genera automáticamente en el primer arranque.</summary>
+        public string playerName = "";
     }
 
     /// <summary>Posición, tamaño y transparencia del D-pad en pantalla.</summary>

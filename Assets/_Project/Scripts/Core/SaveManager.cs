@@ -79,6 +79,12 @@ namespace Shrink.Core
             }
 
             Data.Init(); // garantiza que todos los LevelRecord existen
+
+            if (string.IsNullOrEmpty(Data.settings.playerName))
+            {
+                Data.settings.playerName = NameGenerator.Generate();
+                Save();
+            }
         }
 
         /// <summary>
@@ -145,10 +151,28 @@ namespace Shrink.Core
             Save();
         }
 
+        /// <summary>Guarda el nombre del jugador para el ranking.</summary>
+        public void SavePlayerName(string playerName)
+        {
+            Data.settings.playerName = playerName;
+            Save();
+        }
+
         /// <summary>Guarda el código de idioma preferido.</summary>
         public void SaveLanguage(string langCode)
         {
             Data.settings.language = langCode;
+            Save();
+        }
+
+        /// <summary>
+        /// Reemplaza los datos en memoria con los de la nube y guarda en disco.
+        /// Llamar desde UGSManager cuando los datos de la nube son más avanzados.
+        /// </summary>
+        public void OverwriteData(GameData data)
+        {
+            Data = data;
+            Data.Init();
             Save();
         }
 
