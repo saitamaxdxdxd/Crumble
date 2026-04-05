@@ -208,7 +208,7 @@ namespace Shrink.UI
             AudioManager.Instance?.PlayButtonTap();
             _forcesPause = false;
             Time.timeScale = 1f;
-            SceneManager.LoadScene(_menuSceneName);
+            SceneLoader.Load(_menuSceneName);
         }
 
         // ──────────────────────────────────────────────────────────────────────

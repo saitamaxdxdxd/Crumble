@@ -17,6 +17,7 @@ namespace Shrink.UI
         /// <summary>Niveles completados necesarios para desbloquear el Modo Infinito (sin IAP).</summary>
         private const int    InfiniteGateLevel = 15;
         private const string InfiniteSceneName = "InfiniteScene";
+        private const string DailySceneName    = "DailyScene";
 
         [Header("Paneles")]
         [SerializeField] private GameObject _mainPanel;
@@ -28,6 +29,7 @@ namespace Shrink.UI
         [SerializeField] private LevelSelectController _levelSelect;
         [SerializeField] private SettingsController    _settings;
         [SerializeField] private StoreController       _store;
+        [SerializeField] private LeaderboardController _leaderboard;
 
         [Header("Modo Infinito — modal de bloqueado")]
         [SerializeField] private GameObject _infiniteLockedPanel;
@@ -97,11 +99,26 @@ namespace Shrink.UI
             ShowPanel(_storePanel);
         }
 
+        /// <summary>Carga la escena del Reto Diario.</summary>
+        public void OnDailyPressed()
+        {
+            AudioManager.Instance?.PlayButtonTap();
+            SceneLoader.Load(DailySceneName);
+        }
+
+        /// <summary>Abre el panel de leaderboard global del Modo Infinito.</summary>
+        public void OnLeaderboardPressed()
+        {
+            AudioManager.Instance?.PlayButtonTap();
+            _leaderboard?.Open();
+        }
+
         /// <summary>Vuelve al panel principal desde cualquier sub-panel.</summary>
         public void OnBackPressed()
         {
             AudioManager.Instance?.PlayButtonTap();
             CloseInfiniteLockedModal();
+            _leaderboard?.Close();
             ShowPanel(_mainPanel);
         }
 
@@ -229,7 +246,7 @@ namespace Shrink.UI
 
         private void StartInfiniteMode()
         {
-            SceneManager.LoadScene(InfiniteSceneName);
+            SceneLoader.Load(InfiniteSceneName);
         }
 
         private void ShowPanel(GameObject target)

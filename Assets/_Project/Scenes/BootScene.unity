@@ -439,6 +439,8 @@ GameObject:
   - component: {fileID: 671382496}
   - component: {fileID: 671382501}
   - component: {fileID: 671382502}
+  - component: {fileID: 671382503}
+  - component: {fileID: 671382504}
   m_Layer: 0
   m_Name: Bootstrap
   m_TagString: Untagged
@@ -607,6 +609,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7057e2c7e8385464f8b45e63c72424e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Shrink.Core.UGSManager
+--- !u!114 &671382503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671382494}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdd8ea46f837448f489d023ba1ba42fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shrink.Core.NotificationManager
+--- !u!114 &671382504
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671382494}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d647bedfa2fda4f55a9db2b1269287a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shrink.Core.SceneLoader
+  _fadeDuration: 0.3
 --- !u!1 &1375250405
 GameObject:
   m_ObjectHideFlags: 0

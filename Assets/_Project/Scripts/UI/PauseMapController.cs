@@ -1,3 +1,4 @@
+using Shrink.Core;
 using Shrink.Level;
 using Shrink.Monetization;
 using Shrink.Player;
@@ -139,13 +140,13 @@ namespace Shrink.UI
         private void OnRetryPressed()
         {
             Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            SceneLoader.Load(SceneManager.GetActiveScene().name);
         }
 
         private void OnMenuPressed()
         {
             Time.timeScale = 1f;
-            SceneManager.LoadScene("MenuScene");
+            SceneLoader.Load("MenuScene");
         }
 
         public void Toggle() => SetPaused(!IsPaused);

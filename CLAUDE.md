@@ -601,3 +601,5 @@ Los tres usan el mismo SDK. Instalar desde Package Manager: `com.unity.services.
 - No usar `UnityEngine.Input` (legacy) — siempre `UnityEngine.InputSystem`
 
 BoldCrawler_7271
+
+vagones que te mueven de aA a B y bajrte en cualquier punto intermedio sin gastar masa

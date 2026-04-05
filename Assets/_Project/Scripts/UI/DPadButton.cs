@@ -35,7 +35,16 @@ namespace Shrink.UI
             _controller.OnButtonUp(direction);
         }
 
-        public void OnBeginDrag(PointerEventData eventData) { }
-        public void OnDrag(PointerEventData eventData)      { }
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            if (_controller != null && _controller.IsEditMode)
+                _controller.OnBeginDrag(eventData);
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (_controller != null && _controller.IsEditMode)
+                _controller.OnDrag(eventData);
+        }
     }
 }

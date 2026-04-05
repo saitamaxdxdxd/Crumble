@@ -158,6 +158,13 @@ namespace Shrink.Core
             Save();
         }
 
+        /// <summary>Guarda el progreso del Reto Diario.</summary>
+        public void SaveDailyRecord(DailyRecord record)
+        {
+            Data.daily = record;
+            Save();
+        }
+
         /// <summary>Guarda el código de idioma preferido.</summary>
         public void SaveLanguage(string langCode)
         {

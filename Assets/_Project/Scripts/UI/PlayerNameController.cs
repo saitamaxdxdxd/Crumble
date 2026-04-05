@@ -61,6 +61,7 @@ namespace Shrink.UI
             if (string.IsNullOrEmpty(trimmed)) return; // no guardar si está vacío
 
             SaveManager.Instance?.SavePlayerName(trimmed);
+            _ = UGSManager.Instance?.UpdatePlayerNameAsync(trimmed);
             RefreshButtonText();
             ClosePanel();
         }

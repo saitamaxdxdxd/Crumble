@@ -1,4 +1,5 @@
 using Shrink.Audio;
+using Shrink.Core;
 using Shrink.Events;
 using Shrink.Level;
 using Shrink.Monetization;
@@ -232,7 +233,7 @@ namespace Shrink.UI
             AudioManager.Instance?.PlayButtonTap();
             _forcesPause = false;
             Time.timeScale = 1f;
-            SceneManager.LoadScene(_menuSceneName);
+            SceneLoader.Load(_menuSceneName);
         }
 
         // ──────────────────────────────────────────────────────────────────────

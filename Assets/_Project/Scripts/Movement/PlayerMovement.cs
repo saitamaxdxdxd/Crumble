@@ -12,7 +12,7 @@ namespace Shrink.Movement
     /// </summary>
     [RequireComponent(typeof(Player.SphereController))]
     [RequireComponent(typeof(Player.ShrinkMechanic))]
-    public class PlayerMovement : MonoBehaviour
+    public class PlayerMovement : MonoBehaviour, Shrink.UI.IDPadTarget
     {
         // ──────────────────────────────────────────────────────────────────────
         // Config

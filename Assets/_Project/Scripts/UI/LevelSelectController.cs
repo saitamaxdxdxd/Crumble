@@ -49,6 +49,8 @@ namespace Shrink.UI
         [Header("Tabs de mundo (Mundo1, Mundo2, Mundo3)")]
         [SerializeField] private Button[]   _worldTabButtons;   // 3 botones, uno por mundo
         [SerializeField] private TMP_Text[] _worldTabLabels;    // texto de cada tab (opcional)
+        [SerializeField] private Color      _tabSelectedColor = Color.white;
+        [SerializeField] private Color      _tabNormalColor   = new Color(0.6f, 0.6f, 0.6f, 1f);
 
         [Header("Overlay de mundo bloqueado")]
         [SerializeField] private GameObject _lockedWorldPanel;  // panel que tapa el grid
@@ -138,7 +140,7 @@ namespace Shrink.UI
             AudioManager.Instance?.PlayButtonTap();
             // Si tienes StoreController en la misma escena, actívalo.
             // Si es otra escena, usa SceneManager.LoadScene(_storeSceneName).
-            SceneManager.LoadScene(_storeSceneName);
+            SceneLoader.Load(_storeSceneName);
         }
 
         // ──────────────────────────────────────────────────────────────────────
@@ -165,6 +167,20 @@ namespace Shrink.UI
                                    i < Worlds.Length &&
                                    LevelManager.Instance.TotalLevels > Worlds[i].startIndex;
                 _worldTabButtons[i].gameObject.SetActive(worldExists);
+            }
+        }
+
+        private void RefreshTabVisuals()
+        {
+            if (_worldTabButtons == null) return;
+            for (int i = 0; i < _worldTabButtons.Length; i++)
+            {
+                if (_worldTabButtons[i] == null) continue;
+                var img = _worldTabButtons[i].targetGraphic as Image;
+                if (img != null)
+                    img.color = i == _currentWorld ? _tabSelectedColor : _tabNormalColor;
+                if (_worldTabLabels != null && i < _worldTabLabels.Length && _worldTabLabels[i] != null)
+                    _worldTabLabels[i].color = i == _currentWorld ? _tabSelectedColor : _tabNormalColor;
             }
         }
 
@@ -221,13 +237,15 @@ namespace Shrink.UI
             _pageLabel.text          = $"{_currentPage + 1} / {TotalPages}";
             _prevButton.interactable = _currentPage > 0;
             _nextButton.interactable = _currentPage < TotalPages - 1;
+
+            RefreshTabVisuals();
         }
 
         private void OnLevelSelected(int levelIndex)
         {
             AudioManager.Instance?.PlayButtonTap();
             LevelManager.Instance.SetLevel(levelIndex);
-            SceneManager.LoadScene(_gameSceneName);
+            SceneLoader.Load(_gameSceneName);
         }
 
         private bool IsFullGameOwned()

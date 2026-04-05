@@ -345,7 +345,11 @@ namespace Shrink.Level
             _sphere.Initialize(_renderer, mazeData.StartCell);
             _shrink.Initialize(_renderer, levelData.DifficultyFactor);
             _movement.Initialize(_renderer, moveTimeSlow, moveTimeFast);
-            _dpad?.SetMovement(_movement);
+            if (_dpad != null)
+            {
+                _dpad.gameObject.SetActive(true);
+                _dpad.SetMovement(_movement);
+            }
 
             // ── Cámara ────────────────────────────────────────────────────────
             float ortho = cameraViewCells > 0f

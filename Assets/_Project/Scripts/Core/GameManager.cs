@@ -1,8 +1,10 @@
 using Shrink.Core;
 using Shrink.Events;
 using Shrink.Level;
+using Shrink.Monetization;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace Shrink.Core
 {
@@ -121,7 +123,16 @@ namespace Shrink.Core
             if (lm.HasNext)
                 lm.AdvanceToNext();
             else
-                lm.SetLevel(0); // Volver al principio si se completaron todos
+                lm.SetLevel(0);
+
+            // Mundo 2 en adelante (índice >= 15) requiere full_game
+            bool requiresPaid = lm.CurrentIndex >= 15;
+            bool hasAccess    = IAPManager.Instance != null && IAPManager.Instance.HasFullGame;
+            if (requiresPaid && !hasAccess)
+            {
+                SceneLoader.Load("MenuScene");
+                return;
+            }
 
             LoadCurrentLevel();
         }

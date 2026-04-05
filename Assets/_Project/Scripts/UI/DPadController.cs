@@ -1,6 +1,5 @@
 using Shrink.Core;
 using Shrink.Events;
-using Shrink.Movement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -34,7 +33,7 @@ namespace Shrink.UI
         // Estado
         // ──────────────────────────────────────────────────────────────────────
 
-        private PlayerMovement _movement;
+        private IDPadTarget _movement;
         private RectTransform  _rect;
         private bool           _editMode;
         private Vector2        _dragOffset;
@@ -127,7 +126,7 @@ namespace Shrink.UI
         // ──────────────────────────────────────────────────────────────────────
 
         /// <summary>Llamar desde LevelLoader tras instanciar al jugador.</summary>
-        public void SetMovement(PlayerMovement movement) => _movement = movement;
+        public void SetMovement(IDPadTarget movement) => _movement = movement;
 
         // ──────────────────────────────────────────────────────────────────────
         // Modo edición
@@ -209,10 +208,20 @@ namespace Shrink.UI
             Vector2 dpadSize = _rect.rect.size * transform.localScale.x;
             Vector2 pivot    = _rect.pivot;
 
-            float minX = parentRect.rect.xMin + dpadSize.x * pivot.x;
-            float maxX = parentRect.rect.xMax - dpadSize.x * (1f - pivot.x);
-            float minY = parentRect.rect.yMin + dpadSize.y * pivot.y;
-            float maxY = parentRect.rect.yMax - dpadSize.y * (1f - pivot.y);
+            // anchoredPosition es relativo al anchor reference point, no al origen del parent.
+            // Hay que restar ese offset para que los límites sean correctos independientemente
+            // de dónde esté el anchor del DPad.
+            Vector2 anchorRef = new Vector2(
+                Mathf.Lerp(parentRect.rect.xMin, parentRect.rect.xMax,
+                           (_rect.anchorMin.x + _rect.anchorMax.x) * 0.5f),
+                Mathf.Lerp(parentRect.rect.yMin, parentRect.rect.yMax,
+                           (_rect.anchorMin.y + _rect.anchorMax.y) * 0.5f)
+            );
+
+            float minX = parentRect.rect.xMin - anchorRef.x + dpadSize.x * pivot.x;
+            float maxX = parentRect.rect.xMax - anchorRef.x - dpadSize.x * (1f - pivot.x);
+            float minY = parentRect.rect.yMin - anchorRef.y + dpadSize.y * pivot.y;
+            float maxY = parentRect.rect.yMax - anchorRef.y - dpadSize.y * (1f - pivot.y);
 
             return new Vector2(Mathf.Clamp(pos.x, minX, maxX), Mathf.Clamp(pos.y, minY, maxY));
         }

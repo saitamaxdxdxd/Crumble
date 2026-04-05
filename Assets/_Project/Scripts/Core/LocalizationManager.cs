@@ -158,6 +158,14 @@ namespace Shrink.Core
             "vibration_on"           => "VIBRATION  ON",
             "vibration_off"          => "VIBRATION  OFF",
             "change_name"            => "YOUR NAME",
+            "leaderboard"            => "RANKING",
+            "leaderboard_offline"    => "NO CONNECTION",
+            "notif_inactivity_body"  => "We miss you! Come back and play.",
+            "daily"                  => "WEEKLY",
+            "daily_streak"           => "STREAK",
+            "daily_failed"           => "Better luck next week!",
+            "daily_completed"        => "Completed this week",
+            "notif_daily_body"       => "A new weekly maze is waiting!",
             _               => key,
         };
 
@@ -214,6 +222,14 @@ namespace Shrink.Core
             "vibration_on"           => "VIBRACIÓN  ON",
             "vibration_off"          => "VIBRACIÓN  OFF",
             "change_name"            => "TU NOMBRE",
+            "leaderboard"            => "RANKING",
+            "leaderboard_offline"    => "SIN CONEXIÓN",
+            "notif_inactivity_body"  => "¡Te echamos de menos! Vuelve a jugar.",
+            "daily"                  => "SEMANAL",
+            "daily_streak"           => "RACHA",
+            "daily_failed"           => "¡Mejor suerte la próxima semana!",
+            "daily_completed"        => "Ya completado esta semana",
+            "notif_daily_body"       => "¡Un nuevo laberinto semanal te espera!",
             _               => EN(key),
         };
 
@@ -263,6 +279,14 @@ namespace Shrink.Core
             "play_again"             => "JOGAR DE NOVO",
             "world_name"             => "MUNDO {0}",
             "world_locked"           => "DESBLOQUEAR MUNDO {0}",
+            "leaderboard"            => "RANKING",
+            "leaderboard_offline"    => "SEM CONEXÃO",
+            "notif_inactivity_body"  => "Sentimos sua falta! Volte a jogar.",
+            "daily"                  => "SEMANAL",
+            "daily_streak"           => "SEQUÊNCIA",
+            "daily_failed"           => "Tente novamente na próxima semana!",
+            "daily_completed"        => "Concluído esta semana",
+            "notif_daily_body"       => "Um novo labirinto semanal está esperando!",
             _               => EN(key),
         };
 
@@ -312,6 +336,14 @@ namespace Shrink.Core
             "play_again"             => "NOCHMAL SPIELEN",
             "world_name"             => "WELT {0}",
             "world_locked"           => "WELT {0} FREISCHALTEN",
+            "leaderboard"            => "RANGLISTE",
+            "leaderboard_offline"    => "KEINE VERBINDUNG",
+            "notif_inactivity_body"  => "Wir vermissen dich! Komm zurück und spiele.",
+            "daily"                  => "WÖCHENTLICH",
+            "daily_streak"           => "SERIE",
+            "daily_failed"           => "Nächste Woche klappt's besser!",
+            "daily_completed"        => "Diese Woche abgeschlossen",
+            "notif_daily_body"       => "Ein neues Wochen-Labyrinth wartet auf dich!",
             _               => EN(key),
         };
 
@@ -361,6 +393,14 @@ namespace Shrink.Core
             "play_again"             => "REJOUER",
             "world_name"             => "MONDE {0}",
             "world_locked"           => "DÉBLOQUER MONDE {0}",
+            "leaderboard"            => "CLASSEMENT",
+            "leaderboard_offline"    => "SANS CONNEXION",
+            "notif_inactivity_body"  => "Tu nous manques ! Reviens jouer.",
+            "daily"                  => "HEBDOMADAIRE",
+            "daily_streak"           => "SÉRIE",
+            "daily_failed"           => "Bonne chance la semaine prochaine !",
+            "daily_completed"        => "Complété cette semaine",
+            "notif_daily_body"       => "Un nouveau labyrinthe hebdomadaire t'attend !",
             _               => EN(key),
         };
     }

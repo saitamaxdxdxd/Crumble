@@ -17,6 +17,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/InfiniteScene.unity
     guid: 5c0b58273d1cb40e0a30d6c360a539fe
+  - enabled: 1
+    path: Assets/_Project/Scenes/DailyScene.unity
+    guid: 6e22840ea70d941a6b9e275068258990
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

@@ -14,6 +14,7 @@ namespace Shrink.Core
         public GameStats     stats    = new GameStats();
         public GameSettings  settings = new GameSettings();
         public DPadSettings  dpad     = new DPadSettings();
+        public DailyRecord   daily    = new DailyRecord();
 
         /// <summary>Inicializa todos los registros de nivel.</summary>
         public void Init()
@@ -44,6 +45,18 @@ namespace Shrink.Core
     {
         public float sfxVolume   = 1f;
         public float musicVolume = 0.5f;
+    }
+
+    /// <summary>Progreso del Reto Diario.</summary>
+    [Serializable]
+    public class DailyRecord
+    {
+        /// <summary>Fecha UTC del último día completado ("yyyy-MM-dd"). Vacío = nunca jugado.</summary>
+        public string lastPlayedDate = "";
+        /// <summary>Días consecutivos completados.</summary>
+        public int streak = 0;
+        /// <summary>Mejor puntuación histórica en el Reto Diario.</summary>
+        public int bestScore = 0;
     }
 
     /// <summary>Estadísticas globales de juego.</summary>

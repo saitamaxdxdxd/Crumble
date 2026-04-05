@@ -26,8 +26,9 @@ namespace Shrink.Core
         /// <summary>True cuando la autenticación fue exitosa y los servicios están listos.</summary>
         public bool IsReady { get; private set; }
 
-        private const string LeaderboardId = "Infinite_Mode";
-        private const string CloudSaveKey  = "gamedata";
+        private const string LeaderboardId      = "Infinite_Mode";
+        private const string DailyLeaderboardId = "Daily_Challenge";
+        private const string CloudSaveKey       = "gamedata";
 
         private void Awake()
         {
@@ -142,6 +143,24 @@ namespace Shrink.Core
         // Leaderboards
         // ──────────────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Actualiza el nombre del jugador en UGS Authentication.
+        /// Llamar cada vez que el usuario cambia su nombre en Settings.
+        /// </summary>
+        public async Task UpdatePlayerNameAsync(string newName)
+        {
+            if (!IsReady || string.IsNullOrEmpty(newName)) return;
+            try
+            {
+                await AuthenticationService.Instance.UpdatePlayerNameAsync(newName);
+                Debug.Log($"[UGS] Player name updated to: {newName}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[UGS] UpdatePlayerName failed: {e.Message}");
+            }
+        }
+
         /// <summary>Envía el score del Modo Infinito al leaderboard.</summary>
         public async Task SubmitScoreAsync(int score)
         {
@@ -154,6 +173,50 @@ namespace Shrink.Core
             catch (Exception e)
             {
                 Debug.LogWarning($"[UGS] Submit score failed: {e.Message}");
+            }
+        }
+
+        /// <summary>Envía el score del Reto Diario al leaderboard.</summary>
+        public async Task SubmitDailyScoreAsync(int score)
+        {
+            if (!IsReady) return;
+            try
+            {
+                await LeaderboardsService.Instance.AddPlayerScoreAsync(DailyLeaderboardId, score);
+                Debug.Log($"[UGS] Daily score {score} submitted.");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[UGS] Submit daily score failed: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el top del Reto Diario y la posición del jugador.
+        /// Devuelve (null, null) si falla o no hay conexión.
+        /// </summary>
+        public async Task<(List<LeaderboardEntry> top, LeaderboardEntry playerEntry)> GetDailyLeaderboardAsync(int topCount = 10)
+        {
+            if (!IsReady) return (null, null);
+            try
+            {
+                var topResponse = await LeaderboardsService.Instance
+                    .GetScoresAsync(DailyLeaderboardId, new GetScoresOptions { Limit = topCount });
+
+                LeaderboardEntry playerEntry = null;
+                try
+                {
+                    playerEntry = await LeaderboardsService.Instance
+                        .GetPlayerScoreAsync(DailyLeaderboardId);
+                }
+                catch { }
+
+                return (topResponse.Results, playerEntry);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[UGS] Get daily leaderboard failed: {e.Message}");
+                return (null, null);
             }
         }
 
