@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Shrink.Camera
+namespace Crumble.Camera
 {
     /// <summary>
     /// Cámara ortográfica 2D que sigue suavemente al jugador.

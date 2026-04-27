@@ -1,7 +1,7 @@
-using Shrink.Events;
+using Crumble.Events;
 using UnityEngine;
 
-namespace Shrink.Level
+namespace Crumble.Level
 {
     /// <summary>
     /// Cuenta regresiva del nivel. Se crea en runtime por <see cref="LevelLoader"/>

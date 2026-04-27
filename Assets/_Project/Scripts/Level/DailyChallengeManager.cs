@@ -1,12 +1,12 @@
 using System;
-using Shrink.Core;
-using Shrink.Events;
-using Shrink.Maze;
-using Shrink.Player;
-using Shrink.UI;
+using Crumble.Core;
+using Crumble.Events;
+using Crumble.Maze;
+using Crumble.Player;
+using Crumble.UI;
 using UnityEngine;
 
-namespace Shrink.Level
+namespace Crumble.Level
 {
     /// <summary>
     /// Gestiona el Reto Diario: genera el maze del día (semilla = fecha UTC),

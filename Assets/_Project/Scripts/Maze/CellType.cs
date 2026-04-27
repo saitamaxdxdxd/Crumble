@@ -1,4 +1,4 @@
-namespace Shrink.Maze
+namespace Crumble.Maze
 {
     /// <summary>
     /// Tipos de celda que puede contener una casilla del maze.

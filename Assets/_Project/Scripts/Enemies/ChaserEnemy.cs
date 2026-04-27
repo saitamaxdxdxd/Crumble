@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
-using Shrink.Core;
-using Shrink.Level;
-using Shrink.Maze;
-using Shrink.Player;
+using Crumble.Core;
+using Crumble.Level;
+using Crumble.Maze;
+using Crumble.Player;
 using UnityEngine;
 
-namespace Shrink.Enemies
+namespace Crumble.Enemies
 {
     /// <summary>
     /// Enemigo que persigue al jugador directamente usando BFS.

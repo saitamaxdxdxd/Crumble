@@ -1,11 +1,11 @@
 using System.Collections;
-using Shrink.Core;
-using Shrink.Level;
-using Shrink.Maze;
-using Shrink.Player;
+using Crumble.Core;
+using Crumble.Level;
+using Crumble.Maze;
+using Crumble.Player;
 using UnityEngine;
 
-namespace Shrink.Enemies
+namespace Crumble.Enemies
 {
     /// <summary>
     /// Enemigo que patrulla un segmento fijo de ida y vuelta.

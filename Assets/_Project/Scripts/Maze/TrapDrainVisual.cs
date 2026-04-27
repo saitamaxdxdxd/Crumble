@@ -1,10 +1,10 @@
 using System.Collections;
-using Shrink.Level;
-using Shrink.Player;
+using Crumble.Level;
+using Crumble.Player;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace Shrink.Maze
+namespace Crumble.Maze
 {
     /// <summary>
     /// Componente visual de una celda TRAP_DRAIN.

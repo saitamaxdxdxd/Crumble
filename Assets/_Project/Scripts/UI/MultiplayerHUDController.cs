@@ -1,10 +1,10 @@
-using Shrink.Core;
-using Shrink.Multiplayer;
+using Crumble.Core;
+using Crumble.Multiplayer;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Controla toda la UI de MultiplayerScene:
@@ -186,8 +186,8 @@ namespace Shrink.UI
                 if (!np.HasStateAuthority) continue;
                 if (_localSizeBar != null)
                     _localSizeBar.fillAmount = Mathf.InverseLerp(
-                        Shrink.Player.SphereController.MinSize,
-                        Shrink.Player.SphereController.InitialSize,
+                        Crumble.Player.SphereController.MinSize,
+                        Crumble.Player.SphereController.InitialSize,
                         np.Size);
                 if (_localSizeText != null)
                     _localSizeText.text = $"{np.Size * 100f:0}%";

@@ -1,10 +1,10 @@
 using System.Collections;
 using Fusion;
-using Shrink.Core;
-using Shrink.UI;
+using Crumble.Core;
+using Crumble.UI;
 using UnityEngine;
 
-namespace Shrink.Multiplayer
+namespace Crumble.Multiplayer
 {
     /// <summary>
     /// Orquesta la partida online: conecta, detecta estados de fase y notifica la UI.
@@ -121,8 +121,8 @@ namespace Shrink.Multiplayer
             yield return new WaitUntil(() => _localPlayer != null && _localPlayer.IsReady);
 
             var unityCam = UnityEngine.Camera.main;
-            var cam = unityCam?.GetComponent<Shrink.Camera.CameraFollow>()
-                   ?? unityCam?.gameObject.AddComponent<Shrink.Camera.CameraFollow>();
+            var cam = unityCam?.GetComponent<Crumble.Camera.CameraFollow>()
+                   ?? unityCam?.gameObject.AddComponent<Crumble.Camera.CameraFollow>();
 
             if (cam != null && NetworkMazeState.Instance?.Renderer != null)
             {

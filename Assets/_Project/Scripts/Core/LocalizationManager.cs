@@ -1,7 +1,7 @@
-using Shrink.Events;
+using Crumble.Events;
 using UnityEngine;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Gestiona el idioma del juego. Clase estática — no requiere GameObject en escena.

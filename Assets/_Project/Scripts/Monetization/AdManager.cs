@@ -1,9 +1,9 @@
 using System;
 using GoogleMobileAds.Api;
-using Shrink.Events;
+using Crumble.Events;
 using UnityEngine;
 
-namespace Shrink.Monetization
+namespace Crumble.Monetization
 {
     /// <summary>
     /// Singleton que gestiona los anuncios AdMob.

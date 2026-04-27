@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Shrink.Maze
+namespace Crumble.Maze
 {
     [CustomEditor(typeof(MazeDebugVisualizer))]
     public class MazeDebugVisualizerEditor : UnityEditor.Editor

@@ -1,11 +1,11 @@
-using Shrink.Audio;
-using Shrink.Core;
-using Shrink.Monetization;
+using Crumble.Audio;
+using Crumble.Core;
+using Crumble.Monetization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Controla el panel de tienda con los dos productos disponibles.

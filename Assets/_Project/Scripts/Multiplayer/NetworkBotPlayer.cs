@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using Fusion;
-using Shrink.Core;
-using Shrink.Maze;
-using Shrink.Player;
+using Crumble.Core;
+using Crumble.Maze;
+using Crumble.Player;
 using UnityEngine;
 
-namespace Shrink.Multiplayer
+namespace Crumble.Multiplayer
 {
     /// <summary>
     /// Bot controlado por el master client via BFS hacia el EXIT.

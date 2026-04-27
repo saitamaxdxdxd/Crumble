@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Singleton que carga escenas de forma asíncrona con una cortina negra que baja y sube.

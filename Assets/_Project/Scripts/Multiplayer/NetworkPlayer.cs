@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using Fusion;
-using Shrink.Core;
-using Shrink.Maze;
-using Shrink.Player;
-using Shrink.UI;
+using Crumble.Core;
+using Crumble.Maze;
+using Crumble.Player;
+using Crumble.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Shrink.Multiplayer
+namespace Crumble.Multiplayer
 {
     /// <summary>
     /// Representación de red de un jugador en el modo multijugador.

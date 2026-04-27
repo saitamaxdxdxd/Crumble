@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Shrink.Maze
+namespace Crumble.Maze
 {
     /// <summary>
     /// Contenedor inmutable de los datos de un maze generado.

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Fondo de tablero ajedrez animado para la GameScene.

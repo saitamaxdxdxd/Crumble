@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Genera una textura de tablero de ajedrez y la desplaza en diagonal

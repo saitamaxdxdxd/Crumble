@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Shrink.Level;
-using Shrink.Maze;
+using Crumble.Level;
+using Crumble.Maze;
 using UnityEditor;
 using UnityEngine;
-using EnemyType = Shrink.Level.EnemyType;
+using EnemyType = Crumble.Level.EnemyType;
 
-namespace Shrink.Maze.Editor
+namespace Crumble.Maze.Editor
 {
     /// <summary>
     /// Editor visual de niveles. Genera un preview del maze y permite colocar/borrar

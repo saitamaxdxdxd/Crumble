@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Text;
-using Shrink.Audio;
-using Shrink.Core;
-using Shrink.Level;
+using Crumble.Audio;
+using Crumble.Core;
+using Crumble.Level;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// HUD del Reto Diario.

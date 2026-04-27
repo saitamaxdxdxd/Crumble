@@ -1,8 +1,8 @@
 using System;
-using Shrink.Maze;
+using Crumble.Maze;
 using UnityEngine;
 
-namespace Shrink.Level
+namespace Crumble.Level
 {
     /// <summary>
     /// Override manual de una celda específica del maze.

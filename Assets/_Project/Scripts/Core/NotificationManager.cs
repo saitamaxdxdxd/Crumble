@@ -8,7 +8,7 @@ using Unity.Notifications.Android;
 using Unity.Notifications.iOS;
 #endif
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Gestiona notificaciones locales (sin servidor).

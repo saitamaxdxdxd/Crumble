@@ -1,9 +1,9 @@
 using System.Collections;
-using Shrink.Level;
-using Shrink.Player;
+using Crumble.Level;
+using Crumble.Player;
 using UnityEngine;
 
-namespace Shrink.Maze
+namespace Crumble.Maze
 {
     /// <summary>
     /// Componente visual de una celda SPIKE.

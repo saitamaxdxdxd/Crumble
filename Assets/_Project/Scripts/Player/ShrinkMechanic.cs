@@ -1,7 +1,7 @@
-using Shrink.Maze;
+using Crumble.Maze;
 using UnityEngine;
 
-namespace Shrink.Player
+namespace Crumble.Player
 {
     /// <summary>
     /// Gestiona la mecánica de desgaste: deposita y absorbe migajas,

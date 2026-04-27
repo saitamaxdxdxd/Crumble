@@ -1,9 +1,9 @@
-using Shrink.Core;
-using Shrink.Events;
+using Crumble.Core;
+using Crumble.Events;
 using TMPro;
 using UnityEngine;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Adjuntar a cualquier TMP_Text para que su contenido cambie automáticamente

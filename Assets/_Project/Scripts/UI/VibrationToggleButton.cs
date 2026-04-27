@@ -1,8 +1,8 @@
-using Shrink.Core;
+using Crumble.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Botón de toggle para activar/desactivar la vibración háptica.

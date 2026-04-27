@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Shrink.Maze;
+using Crumble.Maze;
 using UnityEngine;
 
-namespace Shrink.Level
+namespace Crumble.Level
 {
     /// <summary>
     /// Datos de configuración de un nivel. Asignar en Inspector o generar con

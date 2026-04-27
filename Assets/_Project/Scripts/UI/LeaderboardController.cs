@@ -1,13 +1,13 @@
 using System.Collections;
 using System.Text;
-using Shrink.Audio;
-using Shrink.Core;
-using Shrink.Events;
+using Crumble.Audio;
+using Crumble.Core;
+using Crumble.Events;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Panel de leaderboard con dos tabs: Infinite y Daily.

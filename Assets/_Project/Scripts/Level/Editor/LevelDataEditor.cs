@@ -1,8 +1,8 @@
-using Shrink.Maze;
+using Crumble.Maze;
 using UnityEditor;
 using UnityEngine;
 
-namespace Shrink.Level.Editor
+namespace Crumble.Level.Editor
 {
     /// <summary>
     /// Inspector custom para LevelData.

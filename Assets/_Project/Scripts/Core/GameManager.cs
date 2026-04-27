@@ -1,12 +1,12 @@
-using Shrink.Core;
-using Shrink.Events;
-using Shrink.Level;
-using Shrink.Monetization;
+using Crumble.Core;
+using Crumble.Events;
+using Crumble.Level;
+using Crumble.Monetization;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Singleton que orquesta el flujo de juego: carga niveles, reacciona a
@@ -53,6 +53,14 @@ namespace Shrink.Core
 
         private int _starsCollected;
 
+        /// <summary>
+        /// True si el jugador usó alguna ayuda de anuncio en la partida actual.
+        /// Las estrellas guardadas serán 0 si está activo al completar el nivel.
+        /// </summary>
+        public static bool RewardedUsedThisLevel { get; private set; }
+
+        public static void MarkRewardedUsed() => RewardedUsedThisLevel = true;
+
         private void OnEnable()
         {
             GameEvents.OnLevelComplete += HandleLevelComplete;
@@ -88,6 +96,7 @@ namespace Shrink.Core
                 return;
             }
             _starsCollected = 0;
+            RewardedUsedThisLevel = false;
             State = GameState.Playing;
             _loader.LoadLevel(lm.CurrentLevel);
         }
@@ -97,6 +106,7 @@ namespace Shrink.Core
         /// </summary>
         public void RestartLevel()
         {
+            RewardedUsedThisLevel = false;
             State = GameState.Playing;
             _loader.LoadLevel(LevelManager.Instance.CurrentLevel);
         }
@@ -154,8 +164,9 @@ namespace Shrink.Core
         private void HandleLevelComplete()
         {
             State = GameState.LevelComplete;
-            SaveManager.Instance?.CompleteLevel(LevelManager.Instance.CurrentIndex, _starsCollected);
-            Debug.Log($"[GameManager] NIVEL COMPLETADO — estrellas: {_starsCollected}");
+            int starsToSave = RewardedUsedThisLevel ? 0 : _starsCollected;
+            SaveManager.Instance?.CompleteLevel(LevelManager.Instance.CurrentIndex, starsToSave);
+            Debug.Log($"[GameManager] NIVEL COMPLETADO — estrellas: {starsToSave}{(RewardedUsedThisLevel ? " (penalizado por ayuda)" : "")}");
         }
 
         private void HandleLevelFail()

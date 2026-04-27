@@ -1,15 +1,15 @@
-using Shrink.Audio;
-using Shrink.Core;
-using Shrink.Events;
-using Shrink.Level;
-using Shrink.Monetization;
-using Shrink.Player;
+using Crumble.Audio;
+using Crumble.Core;
+using Crumble.Events;
+using Crumble.Level;
+using Crumble.Monetization;
+using Crumble.Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Controla los paneles de victoria y game over en GameScene.
@@ -205,6 +205,7 @@ namespace Shrink.UI
             _shrink.Revive();
             _shrink.AddSize(_continueBonus);
             GameEvents.RaisePlayerRevived();
+            Core.GameManager.MarkRewardedUsed();
             Core.GameManager.Instance?.ResumeAfterContinue();
 
             HidePanels();
@@ -245,9 +246,10 @@ namespace Shrink.UI
             HidePanels();
             _victoryPanel?.SetActive(true);
 
+            int displayStars = Core.GameManager.RewardedUsedThisLevel ? 0 : stars;
             if (_victoryStars != null)
                 for (int i = 0; i < _victoryStars.Length; i++)
-                    _victoryStars[i].color = i < stars ? _starFilledColor : _starEmptyColor;
+                    _victoryStars[i].color = i < displayStars ? _starFilledColor : _starEmptyColor;
         }
 
         private void ShowGameOverPanel()

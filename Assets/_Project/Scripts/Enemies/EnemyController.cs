@@ -1,10 +1,10 @@
 using System.Collections;
-using Shrink.Events;
-using Shrink.Maze;
-using Shrink.Player;
+using Crumble.Events;
+using Crumble.Maze;
+using Crumble.Player;
 using UnityEngine;
 
-namespace Shrink.Enemies
+namespace Crumble.Enemies
 {
     /// <summary>
     /// Clase base para todos los enemigos. Gestiona el movimiento celda a celda,

@@ -1,15 +1,15 @@
-using Shrink.Audio;
-using Shrink.Core;
-using Shrink.Events;
-using Shrink.Level;
-using Shrink.Player;
+using Crumble.Audio;
+using Crumble.Core;
+using Crumble.Events;
+using Crumble.Level;
+using Crumble.Player;
 using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Overlay del Modo Infinito: muestra número de maze y masa actuales,

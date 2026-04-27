@@ -1,9 +1,9 @@
 using System.Collections;
-using Shrink.Events;
-using Shrink.Maze;
+using Crumble.Events;
+using Crumble.Maze;
 using UnityEngine;
 
-namespace Shrink.Player
+namespace Crumble.Player
 {
     /// <summary>
     /// Componente principal de la esfera jugable.

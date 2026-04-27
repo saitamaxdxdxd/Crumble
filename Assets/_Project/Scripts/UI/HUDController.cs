@@ -1,10 +1,10 @@
-using Shrink.Events;
-using Shrink.Player;
+using Crumble.Events;
+using Crumble.Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// HUD de gameplay siempre visible.

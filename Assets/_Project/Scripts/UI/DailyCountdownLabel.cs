@@ -2,7 +2,7 @@ using System;
 using TMPro;
 using UnityEngine;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Muestra la fecha UTC del maze actual mientras no haya cambiado,

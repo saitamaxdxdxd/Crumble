@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Punto de entrada del juego. Muestra logos en secuencia con fade opcional

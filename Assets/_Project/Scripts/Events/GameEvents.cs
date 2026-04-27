@@ -1,7 +1,7 @@
 using System;
-using Shrink.Maze;
+using Crumble.Maze;
 
-namespace Shrink.Events
+namespace Crumble.Events
 {
     /// <summary>
     /// Eventos globales estáticos del juego. Suscribirse y desuscribirse en OnEnable/OnDisable.

@@ -5,7 +5,7 @@ using Fusion;
 using Fusion.Sockets;
 using UnityEngine;
 
-namespace Shrink.Multiplayer
+namespace Crumble.Multiplayer
 {
     /// <summary>
     /// Gestiona el NetworkRunner, matchmaking y ciclo de vida de la sesión.

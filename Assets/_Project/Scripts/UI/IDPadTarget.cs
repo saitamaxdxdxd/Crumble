@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Interfaz que permite a DPadController enviar direcciones a cualquier receptor

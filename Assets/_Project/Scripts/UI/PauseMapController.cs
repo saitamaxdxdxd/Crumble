@@ -1,13 +1,13 @@
-using Shrink.Core;
-using Shrink.Level;
-using Shrink.Monetization;
-using Shrink.Player;
+using Crumble.Core;
+using Crumble.Level;
+using Crumble.Monetization;
+using Crumble.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Controla el panel de pausa.
@@ -215,6 +215,15 @@ namespace Shrink.UI
 
             _pendingSizeReward = false;
             _pendingTimeReward = false;
+
+            Core.GameManager.MarkRewardedUsed();
+            DisableRewardButtons();
+        }
+
+        private void DisableRewardButtons()
+        {
+            if (_addSizeButton != null) _addSizeButton.interactable = false;
+            if (_addTimeButton != null) _addTimeButton.interactable = false;
         }
 
         private void RefreshRewardButtons()

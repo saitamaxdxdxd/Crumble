@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Purchasing;
 
-namespace Shrink.Monetization
+namespace Crumble.Monetization
 {
     /// <summary>
     /// Singleton que gestiona las compras in-app mediante Unity IAP v5.

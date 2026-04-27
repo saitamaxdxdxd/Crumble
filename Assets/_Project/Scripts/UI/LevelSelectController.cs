@@ -1,13 +1,13 @@
-using Shrink.Audio;
-using Shrink.Core;
-using Shrink.Level;
-using Shrink.Monetization;
+using Crumble.Audio;
+using Crumble.Core;
+using Crumble.Level;
+using Crumble.Monetization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Gestiona el panel de selección de nivel segmentado por mundos con paginación de 6 en 6.

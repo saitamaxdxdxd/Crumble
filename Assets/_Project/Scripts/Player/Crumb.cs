@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace Shrink.Player
+namespace Crumble.Player
 {
     /// <summary>
     /// Migaja depositada por la esfera al pasar por una celda.

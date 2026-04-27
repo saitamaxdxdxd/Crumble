@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using Fusion;
-using Shrink.Maze;
+using Crumble.Maze;
 using UnityEngine;
 
-namespace Shrink.Multiplayer
+namespace Crumble.Multiplayer
 {
     public enum GamePhase { Waiting, Countdown, Playing, GameOver }
 

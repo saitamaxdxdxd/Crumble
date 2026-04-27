@@ -1,8 +1,8 @@
-using Shrink.Core;
+using Crumble.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace Shrink.Level.Editor
+namespace Crumble.Level.Editor
 {
     /// <summary>
     /// Inspector custom para LevelManager.

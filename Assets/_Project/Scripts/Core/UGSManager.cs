@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Shrink.Events;
+using Crumble.Events;
 using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
 using Unity.Services.Core;
@@ -9,7 +9,7 @@ using Unity.Services.Leaderboards;
 using Unity.Services.Leaderboards.Models;
 using UnityEngine;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Gestiona Unity Gaming Services: Authentication anónima, Cloud Save y Leaderboards.

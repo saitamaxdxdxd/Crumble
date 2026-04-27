@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
-using Shrink.Events;
+using Crumble.Events;
 using UnityEngine;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Gestiona el feedback háptico del dispositivo.

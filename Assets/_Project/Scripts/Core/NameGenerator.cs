@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Genera nombres aleatorios temáticos para identificar al jugador en el ranking.

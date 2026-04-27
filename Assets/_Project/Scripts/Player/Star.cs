@@ -1,8 +1,8 @@
 using System.Collections;
-using Shrink.Level;
+using Crumble.Level;
 using UnityEngine;
 
-namespace Shrink.Player
+namespace Crumble.Player
 {
     /// <summary>
     /// Objeto recolectable pre-colocado en el maze.

@@ -1,10 +1,10 @@
-using Shrink.Audio;
-using Shrink.Core;
+using Crumble.Audio;
+using Crumble.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Controla el panel de ajustes: volumen SFX/música y modo de movimiento.

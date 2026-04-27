@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Shrink.Maze
+namespace Crumble.Maze
 {
     /// <summary>
     /// Visualizador de debug para el MazeGenerator. Solo para uso en Editor.

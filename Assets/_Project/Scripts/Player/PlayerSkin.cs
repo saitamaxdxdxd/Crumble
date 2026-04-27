@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Shrink.Player
+namespace Crumble.Player
 {
     /// <summary>Tipo de movimiento procedural aplicado sobre el transform.</summary>
     public enum MotionEffect { None, Breathe, Levitate, Vibrate }

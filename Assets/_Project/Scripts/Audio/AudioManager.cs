@@ -1,8 +1,8 @@
-using Shrink.Core;
-using Shrink.Events;
+using Crumble.Core;
+using Crumble.Events;
 using UnityEngine;
 
-namespace Shrink.Audio
+namespace Crumble.Audio
 {
     /// <summary>
     /// Singleton que gestiona toda la audio del juego.

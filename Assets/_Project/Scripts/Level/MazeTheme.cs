@@ -1,7 +1,7 @@
-using Shrink.Player;
+using Crumble.Player;
 using UnityEngine;
 
-namespace Shrink.Level
+namespace Crumble.Level
 {
     /// <summary>
     /// Tema visual completo de un mundo. Agrupa todos los assets visuales

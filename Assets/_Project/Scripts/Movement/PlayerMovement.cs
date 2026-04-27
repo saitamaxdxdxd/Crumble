@@ -1,10 +1,10 @@
 using System.Collections;
-using Shrink.Events;
-using Shrink.Maze;
+using Crumble.Events;
+using Crumble.Maze;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Shrink.Movement
+namespace Crumble.Movement
 {
     /// <summary>
     /// Mueve la esfera por el maze celda a celda.
@@ -12,7 +12,7 @@ namespace Shrink.Movement
     /// </summary>
     [RequireComponent(typeof(Player.SphereController))]
     [RequireComponent(typeof(Player.ShrinkMechanic))]
-    public class PlayerMovement : MonoBehaviour, Shrink.UI.IDPadTarget
+    public class PlayerMovement : MonoBehaviour, Crumble.UI.IDPadTarget
     {
         // ──────────────────────────────────────────────────────────────────────
         // Config

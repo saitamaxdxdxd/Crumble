@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Botón individual del D-pad. Gestiona su propio press/release y notifica a DPadController.

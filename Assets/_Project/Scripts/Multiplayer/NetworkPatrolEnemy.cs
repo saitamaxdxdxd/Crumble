@@ -1,9 +1,9 @@
 using Fusion;
-using Shrink.Core;
-using Shrink.Maze;
+using Crumble.Core;
+using Crumble.Maze;
 using UnityEngine;
 
-namespace Shrink.Multiplayer
+namespace Crumble.Multiplayer
 {
     /// <summary>
     /// Enemigo de patrulla en red. El master client lo mueve; todos los clientes lo ven.

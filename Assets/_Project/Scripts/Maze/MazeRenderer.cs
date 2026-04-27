@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using Shrink.Core;
-using Shrink.Level;
-using Shrink.Player;
+using Crumble.Core;
+using Crumble.Level;
+using Crumble.Player;
 using UnityEngine;
 
-namespace Shrink.Maze
+namespace Crumble.Maze
 {
     /// <summary>
     /// Renderiza un MazeData como GameObjects 2D en escena.

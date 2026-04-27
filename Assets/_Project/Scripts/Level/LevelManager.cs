@@ -1,7 +1,7 @@
-using Shrink.Core;
+using Crumble.Core;
 using UnityEngine;
 
-namespace Shrink.Level
+namespace Crumble.Level
 {
     /// <summary>
     /// Singleton que gestiona la lista de niveles, el índice actual y el progreso guardado.

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Shrink.Player
+namespace Crumble.Player
 {
     /// <summary>
     /// Visual del jugador: blob central grande + satélites que se despegan y pegan

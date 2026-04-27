@@ -1,10 +1,10 @@
-using Shrink.Core;
-using Shrink.Events;
+using Crumble.Core;
+using Crumble.Events;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// D-pad de 4 botones para input táctil.

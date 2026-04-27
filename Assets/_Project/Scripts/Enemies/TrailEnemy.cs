@@ -1,7 +1,7 @@
-using Shrink.Maze;
+using Crumble.Maze;
 using UnityEngine;
 
-namespace Shrink.Enemies
+namespace Crumble.Enemies
 {
     /// <summary>
     /// Enemigo que sigue el rastro de migajas del jugador (más reciente primero)

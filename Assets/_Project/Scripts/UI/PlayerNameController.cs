@@ -1,9 +1,9 @@
-using Shrink.Core;
+using Crumble.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Gestiona el nombre del jugador en Settings.

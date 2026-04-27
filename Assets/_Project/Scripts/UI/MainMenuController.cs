@@ -1,11 +1,11 @@
-using Shrink.Audio;
-using Shrink.Core;
-using Shrink.Events;
+using Crumble.Audio;
+using Crumble.Core;
+using Crumble.Events;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Shrink.UI
+namespace Crumble.UI
 {
     /// <summary>
     /// Controla la navegación entre paneles del menú principal.

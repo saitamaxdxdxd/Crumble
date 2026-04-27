@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Shrink.Level
+namespace Crumble.Level
 {
     /// <summary>Tipo de enemigo a instanciar en un spawn point manual.</summary>
     public enum EnemyType { Patrol, Trail, Chaser }

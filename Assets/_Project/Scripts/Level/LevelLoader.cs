@@ -1,18 +1,18 @@
 using System.Collections.Generic;
-using Shrink.Camera;
-using Shrink.Enemies;
-using Shrink.Maze;
-using Shrink.Movement;
-using Shrink.Player;
-using Shrink.UI;
+using Crumble.Camera;
+using Crumble.Enemies;
+using Crumble.Maze;
+using Crumble.Movement;
+using Crumble.Player;
+using Crumble.UI;
 using UnityEngine;
 using Camera = UnityEngine.Camera;
 
-namespace Shrink.Level
+namespace Crumble.Level
 {
     /// <summary>
     /// Construye y destruye la escena de juego a partir de un <see cref="LevelData"/>.
-    /// Adjuntar al mismo GameObject que <see cref="Shrink.Core.GameManager"/>.
+    /// Adjuntar al mismo GameObject que <see cref="Crumble.Core.GameManager"/>.
     /// Requiere referencias a HUDController y PauseMapController en el Inspector.
     /// </summary>
     public class LevelLoader : MonoBehaviour
@@ -29,7 +29,7 @@ namespace Shrink.Level
 
 
         [Header("Fondo")]
-        [SerializeField] private Shrink.UI.GameSceneBackground _background;
+        [SerializeField] private Crumble.UI.GameSceneBackground _background;
 
         [Header("UI")]
         [SerializeField] private HUDController       _hud;

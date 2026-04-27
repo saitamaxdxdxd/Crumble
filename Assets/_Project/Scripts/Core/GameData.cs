@@ -1,6 +1,6 @@
 using System;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Datos del juego que se persisten en disco como JSON.

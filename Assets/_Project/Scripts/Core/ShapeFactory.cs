@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Shrink.Core
+namespace Crumble.Core
 {
     /// <summary>
     /// Crea sprites 2D de cuadrado y círculo en tiempo de ejecución.
